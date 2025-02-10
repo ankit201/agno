@@ -24,17 +24,17 @@ The game integrates:
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple
+from typing import Dict
 
 from agno.agent import Agent
 from agno.models.anthropic import Claude
+from agno.models.google import Gemini
 from agno.models.ollama import Ollama
 from agno.models.openai import OpenAIChat
 
 project_root = str(Path(__file__).parent.parent.parent.parent)
 if project_root not in sys.path:
     sys.path.append(project_root)
-
 
 from utils import TicTacToeBoard
 
@@ -43,7 +43,7 @@ from utils import TicTacToeBoard
 class ModelConfig:
     display_name: str
     model_id: str
-    provider: str = "openai"
+    provider: str
 
     def get_model(self):
         if self.provider == "anthropic":
@@ -52,116 +52,63 @@ class ModelConfig:
             return OpenAIChat(id=self.model_id)
         if self.provider == "ollama":
             return Ollama(id=self.model_id)
+        if self.provider == "google":
+            return Gemini(id=self.model_id)
         raise ValueError(f"Invalid provider: {self.provider}")
 
 
-# TODO: Add model configs for other providers
-
-
-@dataclass
-class AgentConfig:
-    name: str
-    model: ModelConfig
-    player: str
-    description: str
-
-    @property
-    def model_name(self) -> str:
-        return self.model.display_name
-
-
-# Define model configurations
-MODELS = {
+# Model configuration
+MODELS: Dict[str, ModelConfig] = {
     "claude": ModelConfig(
         display_name="Claude AI",
         model_id="claude-3-5-sonnet-20241022",
         provider="anthropic",
     ),
     "gpt4": ModelConfig(
-        display_name="GPT-o3-mini", model_id="o3-mini", provider="openai"
+        display_name="GPT-4",
+        model_id="gpt-4o",
+        provider="openai",
+    ),
+    "gemini": ModelConfig(
+        display_name="Gemini AI",
+        model_id="gemini-2.0-flash-exp",
+        provider="google",
+    ),
+    "gpt-o3-mini": ModelConfig(
+        display_name="GPT-o3-mini",
+        model_id="o3-mini",
+        provider="openai",
     ),
 }
 
-# Update agent configurations to use model configs
-AGENT_CONFIGS = {
-    "X": AgentConfig(
-        name="Tic Agent",
-        model=MODELS["claude"],
-        player="X",
-        description="Claude-3.5-Sonnet",
-    ),
-    "O": AgentConfig(
-        name="Tac Agent", model=MODELS["gpt4"], player="O", description="GPT-4 Turbo"
-    ),
+# Default model assignments
+DEFAULT_MODELS = {
+    "X": MODELS["gemini"],
+    "O": MODELS["gpt-o3-mini"],
+    "master": MODELS["gpt4"],
 }
-
-
-def get_agent_info(player: str) -> Tuple[str, str]:
-    """Get agent name and model name for a player"""
-    config = AGENT_CONFIGS.get(player)
-    if not config:
-        raise ValueError(f"Invalid player: {player}")
-    return config.name, config.model_name
 
 
 def get_tic_tac_toe(
-    model_id_x: str = "anthropic:claude-3-5-sonnet-20241022",
-    model_id_o: str = "openai:o3-mini",
+    model_x: ModelConfig = DEFAULT_MODELS["X"],
+    model_o: ModelConfig = DEFAULT_MODELS["O"],
+    model_master: ModelConfig = DEFAULT_MODELS["master"],
     debug_mode: bool = True,
 ) -> Agent:
     """
-    Returns an instance of the Tic Tac Toe Master Agent that coordinates the game between two AI players.
-
-    The Master Agent will:
-      - Initialize two player agents (X and O) with different language models
-      - Coordinate turns between players
-      - Validate moves and maintain game state
-      - Track and announce game outcomes
+    Returns an instance of the Tic Tac Toe Master Agent that coordinates the game.
 
     Args:
-        model_id_x: Model identifier for player X in format 'provider:model_name'
-        model_id_o: Model identifier for player O in format 'provider:model_name'
+        model_x: ModelConfig for player X
+        model_o: ModelConfig for player O
+        model_master: ModelConfig for the master agent
         debug_mode: Enable logging and debug features
 
     Returns:
         An instance of the configured Master Agent
     """
-    # Parse model providers and names
-    x_provider, x_model = model_id_x.split(":")
-    o_provider, o_model = model_id_o.split(":")
-
-    # Update model configurations
-    MODELS = {
-        "x_model": ModelConfig(
-            display_name=f"{x_provider.title()} AI",
-            model_id=x_model,
-            provider=x_provider,
-        ),
-        "o_model": ModelConfig(
-            display_name=f"{o_provider.title()} AI",
-            model_id=o_model,
-            provider=o_provider,
-        ),
-    }
-
-    # Update agent configurations
-    AGENT_CONFIGS = {
-        "X": AgentConfig(
-            name="Tic Agent",
-            model=MODELS["x_model"],
-            player="X",
-            description=f"{x_provider.title()}-{x_model}",
-        ),
-        "O": AgentConfig(
-            name="Tac Agent",
-            model=MODELS["o_model"],
-            player="O",
-            description=f"{o_provider.title()}-{o_model}",
-        ),
-    }
-
     tic_agent = Agent(
-        name=AGENT_CONFIGS["X"].name,
+        name="Tic Agent",
         role="""You are the X player in Tic Tac Toe. Your goal is to win by placing three X's in a row (horizontally, vertically, or diagonally).
         
         Game Rules:
@@ -176,11 +123,11 @@ def get_tic_tac_toe(
         - Try to create winning opportunities while blocking your opponent
         - Pay attention to the valid moves list to avoid illegal moves
         """,
-        model=AGENT_CONFIGS["X"].model.get_model(),
+        model=model_x.get_model(),
     )
 
     tac_agent = Agent(
-        name=AGENT_CONFIGS["O"].name,
+        name="Tac Agent",
         role="""You are the O player in Tic Tac Toe. Your goal is to win by placing three O's in a row (horizontally, vertically, or diagonally).
         
         Game Rules:
@@ -195,7 +142,7 @@ def get_tic_tac_toe(
         - Block your opponent's winning opportunities
         - Pay attention to the valid moves list to avoid illegal moves
         """,
-        model=AGENT_CONFIGS["O"].model.get_model(),
+        model=model_o.get_model(),
     )
 
     master_agent = Agent(
@@ -229,7 +176,7 @@ def get_tic_tac_toe(
         
         You will coordinate between the X and O players, ensuring fair play and proper game progression.
         """,
-        model=MODELS["gpt4"].get_model(),
+        model=model_master.get_model(),
         team=[tic_agent, tac_agent],
         show_tool_calls=True,
         debug_mode=debug_mode,

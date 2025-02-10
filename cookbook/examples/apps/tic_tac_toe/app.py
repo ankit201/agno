@@ -1,6 +1,6 @@
 import nest_asyncio
 import streamlit as st
-from agents import AGENT_CONFIGS, get_tic_tac_toe
+from agents import DEFAULT_MODELS, get_tic_tac_toe
 from agno.utils.log import logger
 from utils import TicTacToeBoard
 
@@ -196,10 +196,8 @@ def main():
                 "X" if "X wins" in status else "O" if "O wins" in status else None
             )
             if winner_player:
-                winner_config = AGENT_CONFIGS[winner_player]
-                st.success(
-                    f"🏆 Game Over! {winner_config.model_name} ({winner_config.name}) wins!"
-                )
+                model_config = DEFAULT_MODELS[winner_player]
+                st.success(f"🏆 Game Over! {model_config.display_name} wins!")
             else:
                 st.info("🤝 Game Over! It's a draw!")
             st.session_state.game_paused = True
@@ -211,17 +209,17 @@ def main():
                 if current_player == "X"
                 else st.session_state.master_agent.team[1]
             )
-            agent_config = AGENT_CONFIGS[current_player]
+            model_config = DEFAULT_MODELS[current_player]
 
             show_agent_status(
-                f"{agent_config.model_name} ({agent_config.name})",
+                f"{model_config.display_name} ({agent.name})",
                 f"It's your turn (Player {current_player})",
             )
 
             # Auto-play if not paused
             if not st.session_state.game_paused:
                 with st.spinner(
-                    f"🎲 {agent_config.model_name} ({agent_config.name}) is thinking..."
+                    f"🎲 {model_config.display_name} ({agent.name}) is thinking..."
                 ):
                     valid_moves = st.session_state.game_board.get_valid_moves()
 
@@ -250,14 +248,14 @@ def main():
                             st.session_state.move_history.append(
                                 {
                                     "number": move_number,
-                                    "player": f"{agent_config.model_name} ({current_player})",
+                                    "player": f"{model_config.display_name} ({current_player})",
                                     "move": f"{row},{col}",
                                 }
                             )
 
                             # Log the move in terminal
                             logger.info(
-                                f"Move {move_number}: {agent_config.model_name} (Player {current_player}) placed at position ({row}, {col})"
+                                f"Move {move_number}: {model_config.display_name} (Player {current_player}) placed at position ({row}, {col})"
                             )
                             logger.info(
                                 f"Board state:\n{st.session_state.game_board.get_board_state()}"
@@ -289,9 +287,9 @@ def main():
     st.sidebar.markdown("### About")
     st.sidebar.markdown(f"""
     Watch two AI agents play Tic Tac Toe:
-    - Player X: {AGENT_CONFIGS['X'].model_name} ({AGENT_CONFIGS['X'].name}) - {AGENT_CONFIGS['X'].description}
-    - Player O: {AGENT_CONFIGS['O'].model_name} ({AGENT_CONFIGS['O'].name}) - {AGENT_CONFIGS['O'].description}
-    - Master Agent: Coordinates the game
+    - Player X: {DEFAULT_MODELS['X'].display_name} (Tic Agent)
+    - Player O: {DEFAULT_MODELS['O'].display_name} (Tac Agent)
+    - Master Agent: {DEFAULT_MODELS['master'].display_name} - Coordinates the game
     
     The agents use strategic thinking to:
     - Make winning moves
