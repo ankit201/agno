@@ -166,6 +166,7 @@ def main():
                     st.session_state.game_board = TicTacToeBoard()
                     st.session_state.game_started = True
                     st.session_state.move_history = []
+                    st.session_state.game_paused = False  # Ensure game starts unpaused
                     st.rerun()
             else:
                 if st.button(
@@ -180,6 +181,7 @@ def main():
                     st.session_state.master_agent = get_tic_tac_toe(debug_mode=True)
                     st.session_state.game_board = TicTacToeBoard()
                     st.session_state.move_history = []
+                    st.session_state.game_paused = False  # Ensure new game starts unpaused
                     st.rerun()
 
     # Main game area
