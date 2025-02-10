@@ -1,19 +1,26 @@
 """
 Tic Tac Toe Battle
 ---------------------------------
-This example shows how to build a Tic Tac Toe game where two agents play against each other.
+This example shows how to build a Tic Tac Toe game where two AI agents play against each other.
+The game features a master agent (referee) coordinating between two player agents using different
+language models.
 
 Usage Examples:
 ---------------
-# Method 1: Run directly
-python -m cookbook.examples.apps.tic_tac_toe.agents
+1. Quick game with default settings:
+   master_agent = get_tic_tac_toe()
+   play_tic_tac_toe()
 
-# Method 2: Import and run
-from cookbook.examples.apps.tic_tac_toe.agents import play_tic_tac_toe
-play_tic_tac_toe()
+2. Game with debug mode off:
+   master_agent = get_tic_tac_toe(debug_mode=False)
+   play_tic_tac_toe(debug_mode=False)
+
+The game integrates:
+  - Multiple AI models (Claude, GPT-4, etc.)
+  - Turn-based gameplay coordination
+  - Move validation and game state management
 """
 
-import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -98,11 +105,60 @@ def get_agent_info(player: str) -> Tuple[str, str]:
 
 
 def get_tic_tac_toe(
+    model_id_x: str = "anthropic:claude-3-5-sonnet-20241022",
+    model_id_o: str = "openai:o3-mini",
     debug_mode: bool = True,
 ) -> Agent:
     """
-    Returns an instance of Tic Tac Toe Agent with integrated tools for playing the game.
+    Returns an instance of the Tic Tac Toe Master Agent that coordinates the game between two AI players.
+
+    The Master Agent will:
+      - Initialize two player agents (X and O) with different language models
+      - Coordinate turns between players
+      - Validate moves and maintain game state
+      - Track and announce game outcomes
+
+    Args:
+        model_id_x: Model identifier for player X in format 'provider:model_name'
+        model_id_o: Model identifier for player O in format 'provider:model_name'
+        debug_mode: Enable logging and debug features
+
+    Returns:
+        An instance of the configured Master Agent
     """
+    # Parse model providers and names
+    x_provider, x_model = model_id_x.split(":")
+    o_provider, o_model = model_id_o.split(":")
+
+    # Update model configurations
+    MODELS = {
+        "x_model": ModelConfig(
+            display_name=f"{x_provider.title()} AI",
+            model_id=x_model,
+            provider=x_provider,
+        ),
+        "o_model": ModelConfig(
+            display_name=f"{o_provider.title()} AI",
+            model_id=o_model,
+            provider=o_provider,
+        ),
+    }
+
+    # Update agent configurations
+    AGENT_CONFIGS = {
+        "X": AgentConfig(
+            name="Tic Agent",
+            model=MODELS["x_model"],
+            player="X",
+            description=f"{x_provider.title()}-{x_model}",
+        ),
+        "O": AgentConfig(
+            name="Tac Agent",
+            model=MODELS["o_model"],
+            player="O",
+            description=f"{o_provider.title()}-{o_model}",
+        ),
+    }
 
     tic_agent = Agent(
         name=AGENT_CONFIGS["X"].name,
