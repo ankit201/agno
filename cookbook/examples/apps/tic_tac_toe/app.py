@@ -147,6 +147,11 @@ def main():
         unsafe_allow_html=True,
     )
 
+    st.markdown(
+        f"<h3 style='color:#87CEEB; text-align:center;'>{DEFAULT_MODELS['X'].display_name} vs {DEFAULT_MODELS['O'].display_name}</h3>",
+        unsafe_allow_html=True,
+    )
+
     # Initialize session state
     if "game_started" not in st.session_state:
         st.session_state.game_started = False
