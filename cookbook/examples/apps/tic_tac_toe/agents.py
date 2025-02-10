@@ -13,9 +13,10 @@ from cookbook.examples.apps.tic_tac_toe.agents import play_tic_tac_toe
 play_tic_tac_toe()
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
+
 from agno.agent import Agent
 from agno.models.anthropic import Claude
 from agno.models.openai import OpenAIChat
@@ -26,6 +27,7 @@ if project_root not in sys.path:
 
 
 from utils import TicTacToeBoard
+
 
 def get_tic_tac_toe(
     debug_mode: bool = True,
@@ -116,61 +118,63 @@ def get_tic_tac_toe(
 def play_tic_tac_toe(debug_mode: bool = True) -> None:
     """
     Start and manage a game of Tic Tac Toe between two AI agents.
-    
+
     Args:
         debug_mode (bool): Whether to show debug information during the game
     """
     # Initialize the game
     master_agent = get_tic_tac_toe(debug_mode=debug_mode)
     game_board = TicTacToeBoard()
-    
+
     print("Starting a new game of Tic Tac Toe!")
     print(game_board.get_board_state())
-    
+
     # Game loop
     while True:
         # Get current player
         current_player = "X" if game_board.current_player == "X" else "O"
         agent = master_agent.team[0] if current_player == "X" else master_agent.team[1]
-        
+
         # Get agent's move
         print(f"\n{current_player}'s turn ({agent.name}):")
         valid_moves = game_board.get_valid_moves()
-        
+
         response = agent.run(
             f"""Current board state:\n{game_board.get_board_state()}\n
             Available valid moves (row, col): {valid_moves}\n
             Choose your next move from the valid moves list above.
             Respond with ONLY two numbers for row and column, e.g. "1 2".""",
-            stream=False
+            stream=False,
         )
-        
+
         # Parse move from response content
         try:
             # Extract numbers from response
             import re
-            numbers = re.findall(r'\d+', response.content if response else "")
+
+            numbers = re.findall(r"\d+", response.content if response else "")
             row, col = map(int, numbers[:2])
             success, message = game_board.make_move(row, col)
             print(message)
-            
+
             if not success:
                 print("Invalid move! Try again.")
                 continue
-                
+
         except (ValueError, IndexError):
             print("Invalid move format! Try again.")
             continue
-        
+
         # Check for game end
         winner = game_board.check_winner()
         if winner:
             print(f"\nGame Over! {winner} wins!")
             break
-            
+
         if game_board.is_board_full():
             print("\nGame Over! It's a draw!")
             break
+
 
 if __name__ == "__main__":
     play_tic_tac_toe()
