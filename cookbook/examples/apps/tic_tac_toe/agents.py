@@ -23,7 +23,7 @@ def get_tic_tac_toe(
     tic_agent = Agent(
         name="Tic Agent",
         role="You are tic player of Tic Tac Toe. You'll have to make a move on the board. You'll make x's.",
-        model=OpenAIChat(id="anthropic:claude-3-5-sonnet-20240620"),
+        model=Claude(id="claude-3-5-sonnet-20241022"),
     )
 
     tac_agent = Agent(
