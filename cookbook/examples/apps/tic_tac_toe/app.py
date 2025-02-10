@@ -185,11 +185,12 @@ def main():
 
     # Main game area
     if st.session_state.game_started:
-        # Get game state
         game_over, status = st.session_state.game_board.get_game_state()
 
         # Always display current board state
         display_board(st.session_state.game_board)
+        
+        display_move_history()
 
         if game_over:
             if "wins" in status:
@@ -274,9 +275,6 @@ def main():
                         st.error(f"Error processing move: {str(e)}")
     else:
         st.info("👈 Click 'Start Game' in the sidebar to begin!")
-
-    # Display move history
-    display_move_history()
 
     # About section in sidebar
     st.sidebar.markdown("### About")
