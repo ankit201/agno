@@ -21,8 +21,9 @@ from typing import Tuple
 
 from agno.agent import Agent
 from agno.models.anthropic import Claude
-from agno.models.openai import OpenAIChat
 from agno.models.ollama import Ollama
+from agno.models.openai import OpenAIChat
+
 project_root = str(Path(__file__).parent.parent.parent.parent)
 if project_root not in sys.path:
     sys.path.append(project_root)
