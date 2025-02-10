@@ -22,7 +22,7 @@ from typing import Tuple
 from agno.agent import Agent
 from agno.models.anthropic import Claude
 from agno.models.openai import OpenAIChat
-
+from agno.models.ollama import Ollama
 project_root = str(Path(__file__).parent.parent.parent.parent)
 if project_root not in sys.path:
     sys.path.append(project_root)
@@ -40,7 +40,11 @@ class ModelConfig:
     def get_model(self):
         if self.provider == "anthropic":
             return Claude(id=self.model_id)
-        return OpenAIChat(id=self.model_id)
+        if self.provider == "openai":
+            return OpenAIChat(id=self.model_id)
+        if self.provider == "ollama":
+            return Ollama(id=self.model_id)
+        raise ValueError(f"Invalid provider: {self.provider}")
 
 
 # TODO: Add model configs for other providers
