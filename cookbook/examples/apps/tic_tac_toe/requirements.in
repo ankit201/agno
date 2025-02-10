@@ -1,0 +1,18 @@
+# Core dependencies
+streamlit
+nest-asyncio
+Pillow
+
+agno
+openai
+anthropic
+ollama
+
+python-dotenv
+pathlib
+typing
+dataclasses
+rich
+
+uv
+pip-tools 

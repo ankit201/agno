@@ -78,6 +78,11 @@ MODELS: Dict[str, ModelConfig] = {
         model_id="o3-mini",
         provider="openai",
     ),
+    "vision": ModelConfig(
+        display_name="GPT-4 Vision",
+        model_id="gpt-4o",
+        provider="openai",
+    ),
 }
 
 # Default model assignments
@@ -85,6 +90,7 @@ DEFAULT_MODELS = {
     "X": MODELS["gemini"],
     "O": MODELS["gpt-o3-mini"],
     "master": MODELS["gpt4"],
+    "vision": MODELS["vision"],
 }
 
 
@@ -219,7 +225,6 @@ def play_tic_tac_toe(debug_mode: bool = True) -> None:
 
         # Parse move from response content
         try:
-            # Extract numbers from response
             import re
 
             numbers = re.findall(r"\d+", response.content if response else "")
