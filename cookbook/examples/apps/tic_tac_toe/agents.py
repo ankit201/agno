@@ -15,7 +15,9 @@ play_tic_tac_toe()
 
 import os
 import sys
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Tuple
 
 from agno.agent import Agent
 from agno.models.anthropic import Claude
@@ -29,6 +31,67 @@ if project_root not in sys.path:
 from utils import TicTacToeBoard
 
 
+@dataclass
+class ModelConfig:
+    display_name: str
+    model_id: str
+    provider: str = "openai"
+
+    def get_model(self):
+        if self.provider == "anthropic":
+            return Claude(id=self.model_id)
+        return OpenAIChat(id=self.model_id)
+
+
+# TODO: Add model configs for other providers
+
+
+@dataclass
+class AgentConfig:
+    name: str
+    model: ModelConfig
+    player: str
+    description: str
+
+    @property
+    def model_name(self) -> str:
+        return self.model.display_name
+
+
+# Define model configurations
+MODELS = {
+    "claude": ModelConfig(
+        display_name="Claude AI",
+        model_id="claude-3-5-sonnet-20241022",
+        provider="anthropic",
+    ),
+    "gpt4": ModelConfig(
+        display_name="GPT-o3-mini", model_id="o3-mini", provider="openai"
+    ),
+}
+
+# Update agent configurations to use model configs
+AGENT_CONFIGS = {
+    "X": AgentConfig(
+        name="Tic Agent",
+        model=MODELS["claude"],
+        player="X",
+        description="Claude-3.5-Sonnet",
+    ),
+    "O": AgentConfig(
+        name="Tac Agent", model=MODELS["gpt4"], player="O", description="GPT-4 Turbo"
+    ),
+}
+
+
+def get_agent_info(player: str) -> Tuple[str, str]:
+    """Get agent name and model name for a player"""
+    config = AGENT_CONFIGS.get(player)
+    if not config:
+        raise ValueError(f"Invalid player: {player}")
+    return config.name, config.model_name
+
+
 def get_tic_tac_toe(
     debug_mode: bool = True,
 ) -> Agent:
@@ -37,7 +100,7 @@ def get_tic_tac_toe(
     """
 
     tic_agent = Agent(
-        name="Tic Agent",
+        name=AGENT_CONFIGS["X"].name,
         role="""You are the X player in Tic Tac Toe. Your goal is to win by placing three X's in a row (horizontally, vertically, or diagonally).
         
         Game Rules:
@@ -52,11 +115,11 @@ def get_tic_tac_toe(
         - Try to create winning opportunities while blocking your opponent
         - Pay attention to the valid moves list to avoid illegal moves
         """,
-        model=Claude(id="claude-3-5-sonnet-20241022"),
+        model=AGENT_CONFIGS["X"].model.get_model(),
     )
 
     tac_agent = Agent(
-        name="Tac Agent",
+        name=AGENT_CONFIGS["O"].name,
         role="""You are the O player in Tic Tac Toe. Your goal is to win by placing three O's in a row (horizontally, vertically, or diagonally).
         
         Game Rules:
@@ -71,7 +134,7 @@ def get_tic_tac_toe(
         - Block your opponent's winning opportunities
         - Pay attention to the valid moves list to avoid illegal moves
         """,
-        model=OpenAIChat(id="gpt-4o"),
+        model=AGENT_CONFIGS["O"].model.get_model(),
     )
 
     master_agent = Agent(
@@ -105,7 +168,7 @@ def get_tic_tac_toe(
         
         You will coordinate between the X and O players, ensuring fair play and proper game progression.
         """,
-        model=OpenAIChat(id="gpt-4o-mini"),
+        model=MODELS["gpt4"].get_model(),
         team=[tic_agent, tac_agent],
         show_tool_calls=True,
         debug_mode=debug_mode,
