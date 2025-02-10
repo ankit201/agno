@@ -19,12 +19,10 @@ CUSTOM_CSS = """
 <style>
 .main-title {
     text-align: center;
-    background: linear-gradient(45deg, #1a1a1a, #4a4a4a);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     font-size: 3em;
     font-weight: bold;
     padding: 0.5em 0;
+    color: white;
 }
 .subtitle {
     text-align: center;
@@ -171,14 +169,16 @@ def main():
                     st.session_state.game_board = TicTacToeBoard()
                     st.session_state.game_started = True
                     st.session_state.move_history = []
-                    st.session_state.game_paused = False  # Ensure game starts unpaused
+                    st.session_state.game_paused = False
                     st.rerun()
             else:
-                if st.button(
-                    "⏸️ Pause" if not st.session_state.game_paused else "▶️ Resume"
-                ):
-                    st.session_state.game_paused = not st.session_state.game_paused
-                    st.rerun()
+                game_over, _ = st.session_state.game_board.get_game_state()
+                if not game_over:
+                    if st.button(
+                        "⏸️ Pause" if not st.session_state.game_paused else "▶️ Resume"
+                    ):
+                        st.session_state.game_paused = not st.session_state.game_paused
+                        st.rerun()
 
         with col2:
             if st.session_state.game_started:
