@@ -31,12 +31,11 @@ from agno.models.anthropic import Claude
 from agno.models.google import Gemini
 from agno.models.ollama import Ollama
 from agno.models.openai import OpenAIChat
+from utils import TicTacToeBoard
 
 project_root = str(Path(__file__).parent.parent.parent.parent)
 if project_root not in sys.path:
     sys.path.append(project_root)
-
-from utils import TicTacToeBoard
 
 
 @dataclass
