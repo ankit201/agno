@@ -136,7 +136,7 @@ CUSTOM_CSS = """
     background-color: #2b2b2b;
     border-radius: 4px;
     width: 100%; /* Removed fixed width so entries span the column */
-    box-sizing: border-box; /* Ensure padding doesn’t overflow the column */
+    box-sizing: border-box;
 }
 
 .move-entry.player1 {
@@ -620,11 +620,21 @@ def main():
                     st.rerun()
                 else:
                     logger.error(f"Invalid move attempt: {message}")
-                    st.error(f"Invalid move: {message}")
+                    response = st.session_state.master_agent.team[0].run(
+                        f"""Invalid move: {message}
+                        
+                        Current board state:\n{st.session_state.game_board.get_board_state()}\n
+                        Available valid moves (row, col): {valid_moves}\n
+                        Please choose a valid move from the list above.
+                        Respond with ONLY two numbers for row and column, e.g. "1 2".""",
+                        stream=False,
+                    )
+                    st.rerun() 
 
             except Exception as e:
                 logger.error(f"Error processing move: {str(e)}")
                 st.error(f"Error processing move: {str(e)}")
+                st.rerun()
     else:
         st.info("👈 Click 'Start Game' in the sidebar to begin!")
 
