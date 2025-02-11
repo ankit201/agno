@@ -271,6 +271,7 @@ def create_mini_board_html(
 def display_move_history():
     """Display the move history with mini boards in two columns"""
     st.markdown("### 📜 Game History")
+    history_container = st.empty()  # Create an empty container to hold the history
 
     if "move_history" in st.session_state and st.session_state.move_history:
         # Split moves into player 1 and player 2 moves
@@ -301,20 +302,26 @@ def display_move_history():
                 p2_moves.append(move_html)
 
         max_moves = max(len(p1_moves), len(p2_moves))
+        history_content = []
         for i in range(max_moves):
-            col1, col2 = st.columns(2)
-
+            entry_html = ""
             # Player 1 move
-            with col1:
-                if i < len(p1_moves):
-                    st.markdown(p1_moves[i], unsafe_allow_html=True)
-
+            if i < len(p1_moves):
+                entry_html += p1_moves[i]
             # Player 2 move
-            with col2:
-                if i < len(p2_moves):
-                    st.markdown(p2_moves[i], unsafe_allow_html=True)
+            if i < len(p2_moves):
+                entry_html += p2_moves[i]
+
+            history_content.append(entry_html)
+
+        # Join all entries and display within the container
+        history_container.markdown(
+            "<div class='history-grid'>" + "".join(history_content) + "</div>",
+            unsafe_allow_html=True,
+        )
     else:
-        st.markdown(
+        # Display empty state within the container
+        history_container.markdown(
             """<div style="text-align: center; color: #666; padding: 20px;">
                 No moves yet. Start the game to see the history!
             </div>""",
