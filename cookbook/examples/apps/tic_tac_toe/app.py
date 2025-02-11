@@ -433,6 +433,7 @@ def main():
             "Claude": "claude",
             "GPT-o3-mini": "gpt-o3-mini",
             "Llama 3": "llama",
+            "Deepseek-r1": "deepseek-r1",
         }
 
         # Model selection dropdowns

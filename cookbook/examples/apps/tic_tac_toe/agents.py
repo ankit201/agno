@@ -29,6 +29,7 @@ from typing import Dict
 from agno.agent import Agent
 from agno.models.anthropic import Claude
 from agno.models.google import Gemini
+from agno.models.groq import Groq
 from agno.models.ollama import Ollama
 from agno.models.openai import OpenAIChat
 from utils import TicTacToeBoard
@@ -53,6 +54,8 @@ class ModelConfig:
             return Ollama(id=self.model_id)
         if self.provider == "google":
             return Gemini(id=self.model_id)
+        if self.provider == "groq":
+            return Groq(id=self.model_id)
         raise ValueError(f"Invalid provider: {self.provider}")
 
 
@@ -87,6 +90,11 @@ MODELS: Dict[str, ModelConfig] = {
         display_name="GPT-4 Vision",
         model_id="gpt-4o",
         provider="openai",
+    ),
+    "deepseek-r1": ModelConfig(
+        display_name="DeepSeek-R1",
+        model_id="deepseek-r1-distill-llama-70b",
+        provider="groq",
     ),
 }
 
