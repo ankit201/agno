@@ -19,7 +19,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Custom CSS for styling
 CUSTOM_CSS = """
 <style>
 .main-title {
@@ -89,6 +88,46 @@ CUSTOM_CSS = """
     margin: 10px 0;
 }
 
+.thinking-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    min-width: 300px;
+}
+
+.agent-thinking {
+    background-color: rgba(43, 43, 43, 0.95);
+    border: 1px solid #4CAF50;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+/* Move History Updates */
+.history-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.history-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px; /* Controls spacing between columns */
+    width: 100%;
+    margin: 0; /* Remove left/right margins */
+    padding: 0;
+}
+
+.history-column-left,
+.history-column-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Ensures columns fill available space nicely */
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
 .move-entry {
     display: flex;
     align-items: center;
@@ -96,6 +135,8 @@ CUSTOM_CSS = """
     margin: 8px 0;
     background-color: #2b2b2b;
     border-radius: 4px;
+    width: 100%; /* Removed fixed width so entries span the column */
+    box-sizing: border-box; /* Ensure padding doesn’t overflow the column */
 }
 
 .move-entry.player1 {
@@ -106,19 +147,7 @@ CUSTOM_CSS = """
     border-left: 4px solid #f44336;
 }
 
-.move-number {
-    font-weight: bold;
-    margin-right: 10px;
-}
-
-.move-number.player1 {
-    color: #4CAF50;
-}
-
-.move-number.player2 {
-    color: #f44336;
-}
-
+/* Mini-board styling inside moves */
 .mini-board {
     display: grid;
     grid-template-columns: repeat(3, 25px);
@@ -151,92 +180,22 @@ CUSTOM_CSS = """
     color: white;
 }
 
-.move-info {
-    flex-grow: 1;
-}
-
-.thinking-container {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1000;
-    min-width: 300px;
-}
-
-.agent-thinking {
-    background-color: rgba(43, 43, 43, 0.95);
-    border: 1px solid #4CAF50;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-}
-
-.history-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.history-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
-    width: 100%;
-    padding: 0;
-    margin: 40px 0 20px;
-}
-
-.history-column-left, .history-column-right {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-}
-
-.history-column-left {
-    align-items: flex-end;  /* Align to right side of left column */
-}
-
-.history-column-right {
-    align-items: flex-start;  /* Align to left side of right column */
-}
-
-.move-entry {
-    display: flex;
-    align-items: center;
-    padding: 12px;
-    margin: 8px 0;
-    background-color: #2b2b2b;
-    border-radius: 4px;
-    width: 500px;  /* Fixed width for all entries */
-}
-
-.move-entry.player1 {
-    border-left: 4px solid #4CAF50;
-}
-
-.move-entry.player2 {
-    border-left: 4px solid #f44336;
-}
-
 /* Move info styling */
 .move-info {
     flex-grow: 1;
     padding-left: 12px;
 }
 
-/* Add column headers */
-.history-column-header {
-    font-size: 1.1em;
+.move-number {
     font-weight: bold;
-    padding: 10px;
-    margin-bottom: 10px;
-    text-align: center;
-    border-bottom: 2px solid #444;
+    margin-right: 10px;
 }
 
-.player1-header {
+.move-number.player1 {
     color: #4CAF50;
 }
 
-.player2-header {
+.move-number.player2 {
     color: #f44336;
 }
 </style>
@@ -299,7 +258,7 @@ def create_mini_board_html(
 def display_move_history():
     """Display the move history with mini boards in two columns"""
     st.markdown(
-        '<h3 style="text-align: center; margin-bottom: 30px;">📜 Game History</h3>',
+        '<h3 style="margin-bottom: 30px;">📜 Game History</h3>',
         unsafe_allow_html=True,
     )
     history_container = st.empty()
