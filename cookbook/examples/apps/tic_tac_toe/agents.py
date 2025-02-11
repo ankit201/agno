@@ -78,6 +78,11 @@ MODELS: Dict[str, ModelConfig] = {
         model_id="o3-mini",
         provider="openai",
     ),
+    "llama": ModelConfig(
+        display_name="Llama 3",
+        model_id="llama3.2",
+        provider="ollama",
+    ),
     "vision": ModelConfig(
         display_name="GPT-4 Vision",
         model_id="gpt-4o",
@@ -112,8 +117,8 @@ def get_tic_tac_toe(
     Returns:
         An instance of the configured Master Agent
     """
-    tic_agent = Agent(
-        name="Tic Agent",
+    player1 = Agent(
+        name="Player 1",
         role="""You are the X player in Tic Tac Toe. Your goal is to win by placing three X's in a row (horizontally, vertically, or diagonally).
         
         Game Rules:
@@ -131,8 +136,8 @@ def get_tic_tac_toe(
         model=model_x.get_model(),
     )
 
-    tac_agent = Agent(
-        name="Tac Agent",
+    player2 = Agent(
+        name="Player 2",
         role="""You are the O player in Tic Tac Toe. Your goal is to win by placing three O's in a row (horizontally, vertically, or diagonally).
         
         Game Rules:
@@ -182,7 +187,7 @@ def get_tic_tac_toe(
         You will coordinate between the X and O players, ensuring fair play and proper game progression.
         """,
         model=model_master.get_model(),
-        team=[tic_agent, tac_agent],
+        team=[player1, player2],
         show_tool_calls=True,
         debug_mode=debug_mode,
         markdown=True,

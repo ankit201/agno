@@ -1,12 +1,13 @@
+import io
+
 import nest_asyncio
 import streamlit as st
-from agents import DEFAULT_MODELS, get_tic_tac_toe
-from agno.utils.log import logger
-from utils import TicTacToeBoard
-from PIL import Image as PILImage
-import io
-from agno.media import Image as AgnoImage
+from agents import DEFAULT_MODELS, MODELS, get_tic_tac_toe
 from agno.agent import Agent
+from agno.media import Image as AgnoImage
+from agno.utils.log import logger
+from PIL import Image as PILImage
+from utils import TicTacToeBoard
 
 nest_asyncio.apply()
 
@@ -145,16 +146,15 @@ def extract_board_state_from_image(image) -> str:
     Use GPT-4o to analyze the Tic Tac Toe board image and return the board state.
     """
     vision_agent = Agent(
-        name="Vision Agent",
-        model=DEFAULT_MODELS["vision"].get_model()
+        name="Vision Agent", model=DEFAULT_MODELS["vision"].get_model()
     )
-    
+
     img_byte_arr = io.BytesIO()
-    image.save(img_byte_arr, format='PNG')
+    image.save(img_byte_arr, format="PNG")
     img_byte_arr = img_byte_arr.getvalue()
-    
+
     image_obj = AgnoImage(content=img_byte_arr)
-    
+
     prompt = """Analyze this Tic Tac Toe board image. Return ONLY a 3x3 matrix showing the board state where:
 - Use 'X' for X moves
 - Use 'O' for O moves
@@ -164,26 +164,23 @@ Example:
 XO_
 _X_
 O__"""
-    
+
     logger.info(f"Vision Agent Prompt: {prompt}")
-    
-    response = vision_agent.run(
-        prompt,
-        images=[image_obj]
-    )
-    
+
+    response = vision_agent.run(prompt, images=[image_obj])
+
     logger.info(f"Vision Agent Response: {response.content}")
-    
+
     # Clean up the response to handle potential formatting
-    board_state = response.content.strip().replace('```', '').strip()
-    
-    rows = [row.strip() for row in board_state.split('\n') if row.strip()]
+    board_state = response.content.strip().replace("```", "").strip()
+
+    rows = [row.strip() for row in board_state.split("\n") if row.strip()]
     if len(rows) != 3 or any(len(row) != 3 for row in rows):
         raise ValueError("Invalid board state format from vision model")
-    
+
     logger.info(f"Parsed Board State:\n{'\n'.join(rows)}")
-    
-    return '\n'.join(rows)
+
+    return "\n".join(rows)
 
 
 def initialize_board_from_state(board_state: str) -> TicTacToeBoard:
@@ -196,30 +193,32 @@ def initialize_board_from_state(board_state: str) -> TicTacToeBoard:
     O__
     """
     board = TicTacToeBoard()
-    rows = board_state.strip().split('\n')
-    
+    rows = board_state.strip().split("\n")
+
     if len(rows) != 3:
         raise ValueError(f"Invalid board state: expected 3 rows, got {len(rows)}")
-    
+
     for i, row in enumerate(rows):
         if len(row) != 3:
-            raise ValueError(f"Invalid row length in row {i}: expected 3, got {len(row)}")
-        
+            raise ValueError(
+                f"Invalid row length in row {i}: expected 3, got {len(row)}"
+            )
+
         for j, cell in enumerate(row):
-            if cell == 'X' or cell == 'O':
+            if cell == "X" or cell == "O":
                 board.board[i][j] = cell
-            elif cell == '_' or cell == ' ':
-                board.board[i][j] = ' ' 
+            elif cell == "_" or cell == " ":
+                board.board[i][j] = " "
             else:
                 raise ValueError(f"Invalid character in board state: {cell}")
-    
-    x_count = sum(row.count('X') for row in board.board)
-    o_count = sum(row.count('O') for row in board.board)
-    board.current_player = 'O' if x_count > o_count else 'X'
-    
+
+    x_count = sum(row.count("X") for row in board.board)
+    o_count = sum(row.count("O") for row in board.board)
+    board.current_player = "O" if x_count > o_count else "X"
+
     logger.info(f"Initialized board state:\n{board.get_board_state()}")
     logger.info(f"Next player: {board.current_player}")
-    
+
     return board
 
 
@@ -229,11 +228,6 @@ def main():
     )
     st.markdown(
         "<p class='subtitle'>Watch AI agents battle it out in Tic Tac Toe!</p>",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        f"<h3 style='color:#87CEEB; text-align:center;'>{DEFAULT_MODELS['X'].display_name} vs {DEFAULT_MODELS['O'].display_name}</h3>",
         unsafe_allow_html=True,
     )
 
@@ -247,12 +241,43 @@ def main():
     with st.sidebar:
         st.markdown("### Game Controls")
 
-        col1, col2 = st.columns(2)
+        available_models = {
+            "Gemini": "gemini",
+            "GPT-4": "gpt4",
+            "Claude": "claude",
+            "GPT-o3-mini": "gpt-o3-mini",
+            "Llama 3": "llama",
+        }
 
+        # Model selection dropdowns
+        col1, col2 = st.columns(2)
+        with col1:
+            selected_p1 = st.selectbox(
+                "Player 1 (X) Model",
+                list(available_models.keys()),
+                index=list(available_models.values()).index("gemini"),
+                key="model_p1",
+            )
+        with col2:
+            selected_p2 = st.selectbox(
+                "Player 2 (O) Model",
+                list(available_models.keys()),
+                index=list(available_models.values()).index("gpt-o3-mini"),
+                key="model_p2",
+            )
+
+        # Game control buttons
+        col1, col2 = st.columns(2)
         with col1:
             if not st.session_state.game_started:
                 if st.button("▶️ Start Game"):
-                    st.session_state.master_agent = get_tic_tac_toe(debug_mode=True)
+                    # Get selected models
+                    model_p1 = MODELS[available_models[selected_p1]]
+                    model_p2 = MODELS[available_models[selected_p2]]
+
+                    st.session_state.master_agent = get_tic_tac_toe(
+                        model_x=model_p1, model_o=model_p2, debug_mode=True
+                    )
                     st.session_state.game_board = TicTacToeBoard()
                     st.session_state.game_started = True
                     st.session_state.move_history = []
@@ -270,26 +295,36 @@ def main():
         with col2:
             if st.session_state.game_started:
                 if st.button("🔄 New Game"):
-                    st.session_state.master_agent = get_tic_tac_toe(debug_mode=True)
+                    # Get selected models
+                    model_p1 = MODELS[available_models[selected_p1]]
+                    model_p2 = MODELS[available_models[selected_p2]]
+
+                    st.session_state.master_agent = get_tic_tac_toe(
+                        model_x=model_p1, model_o=model_p2, debug_mode=True
+                    )
                     st.session_state.game_board = TicTacToeBoard()
                     st.session_state.move_history = []
                     st.session_state.game_paused = False
                     st.rerun()
 
         st.markdown("### Start from Image")
-        uploaded_file = st.file_uploader("Upload a Tic Tac Toe board image", type=['png', 'jpg', 'jpeg'])
-        
+        uploaded_file = st.file_uploader(
+            "Upload a Tic Tac Toe board image", type=["png", "jpg", "jpeg"]
+        )
+
         if uploaded_file is not None and not st.session_state.game_started:
             try:
                 image = PILImage.open(uploaded_file)
                 st.image(image, caption="Uploaded board image", width=200)
-                
+
                 if st.button("Start Game from Image"):
                     with st.spinner("Analyzing board image..."):
                         board_state = extract_board_state_from_image(image)
-                        
+
                     st.session_state.master_agent = get_tic_tac_toe(debug_mode=True)
-                    st.session_state.game_board = initialize_board_from_state(board_state)
+                    st.session_state.game_board = initialize_board_from_state(
+                        board_state
+                    )
                     st.session_state.game_started = True
                     st.session_state.move_history = []
                     st.session_state.game_paused = False
@@ -297,6 +332,18 @@ def main():
             except Exception as e:
                 st.error(f"Error processing image: {str(e)}")
                 logger.error(f"Image processing error: {str(e)}")
+
+    # Update the header to show current models
+    if st.session_state.game_started:
+        st.markdown(
+            f"<h3 style='color:#87CEEB; text-align:center;'>{selected_p1} vs {selected_p2}</h3>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            "<h3 style='color:#87CEEB; text-align:center;'>Select models and start the game!</h3>",
+            unsafe_allow_html=True,
+        )
 
     # Main game area
     if st.session_state.game_started:
@@ -312,34 +359,31 @@ def main():
                 "X" if "X wins" in status else "O" if "O wins" in status else None
             )
             if winner_player:
-                model_config = DEFAULT_MODELS[winner_player]
-                st.success(f"🏆 Game Over! {model_config.display_name} wins!")
+                winner_num = "1" if winner_player == "X" else "2"
+                winner_model = selected_p1 if winner_player == "X" else selected_p2
+                st.success(f"🏆 Game Over! Player {winner_num} ({winner_model}) wins!")
             else:
                 st.info("🤝 Game Over! It's a draw!")
             st.session_state.game_paused = True
         else:
             # Show current player and status
             current_player = st.session_state.game_board.current_player
-            agent = (
-                st.session_state.master_agent.team[0]
-                if current_player == "X"
-                else st.session_state.master_agent.team[1]
-            )
-            model_config = DEFAULT_MODELS[current_player]
+            player_num = "1" if current_player == "X" else "2"
+            current_model_name = selected_p1 if current_player == "X" else selected_p2
 
             show_agent_status(
-                f"{model_config.display_name} ({agent.name})",
-                f"It's your turn (Player {current_player})",
+                f"Player {player_num} ({current_model_name})",
+                "It's your turn",
             )
 
             # Auto-play if not paused
             if not st.session_state.game_paused:
                 with st.spinner(
-                    f"🎲 {model_config.display_name} ({agent.name}) is thinking..."
+                    f"🎲 Player {player_num} ({current_model_name}) is thinking..."
                 ):
                     valid_moves = st.session_state.game_board.get_valid_moves()
 
-                    response = agent.run(
+                    response = st.session_state.master_agent.team[0].run(
                         f"""Current board state:\n{st.session_state.game_board.get_board_state()}\n
                         Available valid moves (row, col): {valid_moves}\n
                         Choose your next move from the valid moves list above.
@@ -363,13 +407,13 @@ def main():
                             st.session_state.move_history.append(
                                 {
                                     "number": move_number,
-                                    "player": f"{model_config.display_name} ({current_player})",
+                                    "player": f"Player {player_num} ({current_model_name})",
                                     "move": f"{row},{col}",
                                 }
                             )
 
                             logger.info(
-                                f"Move {move_number}: {model_config.display_name} (Player {current_player}) placed at position ({row}, {col})"
+                                f"Move {move_number}: Player {player_num} ({current_model_name}) placed at position ({row}, {col})"
                             )
                             logger.info(
                                 f"Board state:\n{st.session_state.game_board.get_board_state()}"
@@ -400,8 +444,8 @@ def main():
     st.sidebar.markdown("### About")
     st.sidebar.markdown(f"""
     Watch two AI agents play Tic Tac Toe:
-    - Player X: {DEFAULT_MODELS['X'].display_name} (Tic Agent)
-    - Player O: {DEFAULT_MODELS['O'].display_name} (Tac Agent)
+    - Player 1 (X): {selected_p1}
+    - Player 2 (O): {selected_p2}
     - Master Agent: {DEFAULT_MODELS['master'].display_name} - Coordinates the game
     
     The agents use strategic thinking to:
