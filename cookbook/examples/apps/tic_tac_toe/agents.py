@@ -92,8 +92,8 @@ MODELS: Dict[str, ModelConfig] = {
 
 # Default model assignments
 DEFAULT_MODELS = {
-    "X": MODELS["gemini"],
-    "O": MODELS["gpt-o3-mini"],
+    "X": MODELS["gpt-o3-mini"],
+    "O": MODELS["gemini"],
     "master": MODELS["gpt4"],
     "vision": MODELS["vision"],
 }
