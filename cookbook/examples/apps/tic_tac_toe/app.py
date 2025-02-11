@@ -433,7 +433,6 @@ def main():
             "Claude": "claude",
             "GPT-o3-mini": "gpt-o3-mini",
             "Llama 3": "llama",
-            "Deepseek-r1": "deepseek-r1",
         }
 
         # Model selection dropdowns
@@ -629,7 +628,7 @@ def main():
                         Respond with ONLY two numbers for row and column, e.g. "1 2".""",
                         stream=False,
                     )
-                    st.rerun() 
+                    st.rerun()
 
             except Exception as e:
                 logger.error(f"Error processing move: {str(e)}")
