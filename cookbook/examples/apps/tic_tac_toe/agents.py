@@ -63,8 +63,8 @@ MODELS: Dict[str, ModelConfig] = {
         model_id="claude-3-5-sonnet-20241022",
         provider="anthropic",
     ),
-    "gpt4": ModelConfig(
-        display_name="GPT-4",
+    "gpt-4o": ModelConfig(
+        display_name="GPT-4o",
         model_id="gpt-4o",
         provider="openai",
     ),
@@ -94,7 +94,7 @@ MODELS: Dict[str, ModelConfig] = {
 DEFAULT_MODELS = {
     "X": MODELS["gpt-o3-mini"],
     "O": MODELS["gemini"],
-    "master": MODELS["gpt4"],
+    "master": MODELS["gpt-4o"],
     "vision": MODELS["vision"],
 }
 

@@ -99,11 +99,11 @@ CUSTOM_CSS = """
 }
 
 .move-entry.player1 {
-    border-left: 4px solid #4CAF50;  /* Green for Player 1 */
+    border-left: 4px solid #4CAF50;
 }
 
 .move-entry.player2 {
-    border-left: 4px solid #f44336;  /* Red for Player 2 */
+    border-left: 4px solid #f44336;
 }
 
 .move-number {
@@ -165,23 +165,61 @@ CUSTOM_CSS = """
 }
 
 .agent-thinking {
-    background-color: rgba(43, 43, 43, 0.95);  /* Slightly transparent background */
+    background-color: rgba(43, 43, 43, 0.95);
     border: 1px solid #4CAF50;
     box-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
 
-.history-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;  /* Two equal columns */
-    gap: 20px;
-    max-width: 1000px;
-    margin: 40px auto 20px;
-    padding: 0 20px;
+.history-header {
+    text-align: center;
+    margin-bottom: 30px;
 }
 
-.history-column {
+.history-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    width: 100%;
+    padding: 0;
+    margin: 40px 0 20px;
+}
+
+.history-column-left, .history-column-right {
     display: flex;
     flex-direction: column;
+    width: 100%;
+}
+
+.history-column-left {
+    align-items: flex-end;  /* Align to right side of left column */
+}
+
+.history-column-right {
+    align-items: flex-start;  /* Align to left side of right column */
+}
+
+.move-entry {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin: 8px 0;
+    background-color: #2b2b2b;
+    border-radius: 4px;
+    width: 500px;  /* Fixed width for all entries */
+}
+
+.move-entry.player1 {
+    border-left: 4px solid #4CAF50;
+}
+
+.move-entry.player2 {
+    border-left: 4px solid #f44336;
+}
+
+/* Move info styling */
+.move-info {
+    flex-grow: 1;
+    padding-left: 12px;
 }
 
 /* Add column headers */
@@ -200,16 +238,6 @@ CUSTOM_CSS = """
 
 .player2-header {
     color: #f44336;
-}
-
-.move-entry {
-    display: flex;
-    align-items: center;
-    padding: 12px;
-    margin: 8px 0;
-    background-color: #2b2b2b;
-    border-radius: 4px;
-    height: fit-content;  /* Ensure consistent height */
 }
 </style>
 """
@@ -270,8 +298,11 @@ def create_mini_board_html(
 
 def display_move_history():
     """Display the move history with mini boards in two columns"""
-    st.markdown("### 📜 Game History")
-    history_container = st.empty()  # Create an empty container to hold the history
+    st.markdown(
+        '<h3 style="text-align: center; margin-bottom: 30px;">📜 Game History</h3>',
+        unsafe_allow_html=True,
+    )
+    history_container = st.empty()
 
     if "move_history" in st.session_state and st.session_state.move_history:
         # Split moves into player 1 and player 2 moves
@@ -302,25 +333,33 @@ def display_move_history():
                 p2_moves.append(move_html)
 
         max_moves = max(len(p1_moves), len(p2_moves))
-        history_content = []
+        history_content = '<div class="history-grid">'
+
+        # Left column (Player 1)
+        history_content += '<div class="history-column-left">'
         for i in range(max_moves):
             entry_html = ""
             # Player 1 move
             if i < len(p1_moves):
                 entry_html += p1_moves[i]
+            history_content += entry_html
+        history_content += "</div>"
+
+        # Right column (Player 2)
+        history_content += '<div class="history-column-right">'
+        for i in range(max_moves):
+            entry_html = ""
             # Player 2 move
             if i < len(p2_moves):
                 entry_html += p2_moves[i]
+            history_content += entry_html
+        history_content += "</div>"
 
-            history_content.append(entry_html)
+        history_content += "</div>"
 
-        # Join all entries and display within the container
-        history_container.markdown(
-            "<div class='history-grid'>" + "".join(history_content) + "</div>",
-            unsafe_allow_html=True,
-        )
+        # Display the content
+        history_container.markdown(history_content, unsafe_allow_html=True)
     else:
-        # Display empty state within the container
         history_container.markdown(
             """<div style="text-align: center; color: #666; padding: 20px;">
                 No moves yet. Start the game to see the history!
@@ -431,7 +470,7 @@ def main():
 
         available_models = {
             "Gemini": "gemini",
-            "GPT-4o": "gpt4o",
+            "GPT-4o": "gpt-4o",
             "Claude": "claude",
             "GPT-o3-mini": "gpt-o3-mini",
             "Llama 3": "llama",
