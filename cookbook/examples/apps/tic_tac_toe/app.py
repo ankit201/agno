@@ -96,8 +96,29 @@ CUSTOM_CSS = """
     margin: 8px 0;
     background-color: #2b2b2b;
     border-radius: 4px;
-    border-left: 4px solid #4CAF50;
 }
+
+.move-entry.player1 {
+    border-left: 4px solid #4CAF50;  /* Green for Player 1 */
+}
+
+.move-entry.player2 {
+    border-left: 4px solid #f44336;  /* Red for Player 2 */
+}
+
+.move-number {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.move-number.player1 {
+    color: #4CAF50;
+}
+
+.move-number.player2 {
+    color: #f44336;
+}
+
 .mini-board {
     display: grid;
     grid-template-columns: repeat(3, 25px);
@@ -107,6 +128,7 @@ CUSTOM_CSS = """
     border-radius: 4px;
     margin-right: 15px;
 }
+
 .mini-cell {
     width: 25px;
     height: 25px;
@@ -118,10 +140,17 @@ CUSTOM_CSS = """
     background-color: #2b2b2b;
     color: #fff;
 }
-.mini-cell.highlight {
+
+.mini-cell.highlight.player1 {
     background-color: #4CAF50;
     color: white;
 }
+
+.mini-cell.highlight.player2 {
+    background-color: #f44336;
+    color: white;
+}
+
 .move-info {
     flex-grow: 1;
 }
@@ -139,6 +168,48 @@ CUSTOM_CSS = """
     background-color: rgba(43, 43, 43, 0.95);  /* Slightly transparent background */
     border: 1px solid #4CAF50;
     box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.history-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;  /* Two equal columns */
+    gap: 20px;
+    max-width: 1000px;
+    margin: 40px auto 20px;
+    padding: 0 20px;
+}
+
+.history-column {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Add column headers */
+.history-column-header {
+    font-size: 1.1em;
+    font-weight: bold;
+    padding: 10px;
+    margin-bottom: 10px;
+    text-align: center;
+    border-bottom: 2px solid #444;
+}
+
+.player1-header {
+    color: #4CAF50;
+}
+
+.player2-header {
+    color: #f44336;
+}
+
+.move-entry {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    margin: 8px 0;
+    background-color: #2b2b2b;
+    border-radius: 4px;
+    height: fit-content;  /* Ensure consistent height */
 }
 </style>
 """
@@ -180,47 +251,68 @@ def show_thinking_indicator(agent_name: str):
     )
 
 
-def create_mini_board_html(board_state: list, highlight_pos: tuple = None) -> str:
-    """Create HTML for a mini board with optional highlighted position"""
+def create_mini_board_html(
+    board_state: list, highlight_pos: tuple = None, is_player1: bool = True
+) -> str:
+    """Create HTML for a mini board with player-specific highlighting"""
     html = '<div class="mini-board">'
     for i in range(3):
         for j in range(3):
-            highlight = "highlight" if highlight_pos and (i, j) == highlight_pos else ""
+            highlight = (
+                f"highlight player{1 if is_player1 else 2}"
+                if highlight_pos and (i, j) == highlight_pos
+                else ""
+            )
             html += f'<div class="mini-cell {highlight}">{board_state[i][j]}</div>'
     html += "</div>"
     return html
 
 
 def display_move_history():
-    """Display the move history with mini boards"""
+    """Display the move history with mini boards in two columns"""
     st.markdown("### 📜 Game History")
 
     if "move_history" in st.session_state and st.session_state.move_history:
+        # Split moves into player 1 and player 2 moves
+        p1_moves = []
+        p2_moves = []
         current_board = [[" " for _ in range(3)] for _ in range(3)]
 
+        # Process all moves first
         for move in st.session_state.move_history:
-            # Parse move coordinates
             row, col = map(int, move["move"].split(","))
-
-            # Get player symbol (X or O)
-            symbol = "X" if "Player 1" in move["player"] else "O"
-
+            is_player1 = "Player 1" in move["player"]
+            symbol = "X" if is_player1 else "O"
             current_board[row][col] = symbol
-
-            # Create a copy of the current board state
             board_copy = [row[:] for row in current_board]
 
-            st.markdown(
-                f"""<div class="move-entry">
-                    {create_mini_board_html(board_copy, (row, col))}
-                    <div class="move-info">
-                        <div style="font-weight: bold; color: #4CAF50">Move #{move['number']}</div>
-                        <div>{move['player']}</div>
-                        <div style="font-size: 0.9em; color: #888">Position: ({row}, {col})</div>
-                    </div>
-                </div>""",
-                unsafe_allow_html=True,
-            )
+            move_html = f"""<div class="move-entry player{1 if is_player1 else 2}">
+                {create_mini_board_html(board_copy, (row, col), is_player1)}
+                <div class="move-info">
+                    <div class="move-number player{1 if is_player1 else 2}">Move #{move['number']}</div>
+                    <div>{move['player']}</div>
+                    <div style="font-size: 0.9em; color: #888">Position: ({row}, {col})</div>
+                </div>
+            </div>"""
+
+            if is_player1:
+                p1_moves.append(move_html)
+            else:
+                p2_moves.append(move_html)
+
+        max_moves = max(len(p1_moves), len(p2_moves))
+        for i in range(max_moves):
+            col1, col2 = st.columns(2)
+
+            # Player 1 move
+            with col1:
+                if i < len(p1_moves):
+                    st.markdown(p1_moves[i], unsafe_allow_html=True)
+
+            # Player 2 move
+            with col2:
+                if i < len(p2_moves):
+                    st.markdown(p2_moves[i], unsafe_allow_html=True)
     else:
         st.markdown(
             """<div style="text-align: center; color: #666; padding: 20px;">
@@ -228,8 +320,6 @@ def display_move_history():
             </div>""",
             unsafe_allow_html=True,
         )
-
-    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def extract_board_state_from_image(image) -> str:
@@ -440,42 +530,31 @@ def main():
     if st.session_state.game_started:
         game_over, status = st.session_state.game_board.get_game_state()
 
-        # Create two columns for board and history
-        col1, col2 = st.columns([2, 1])
+        display_board(st.session_state.game_board)
 
-        with col1:
-            # Display current board state
-            display_board(st.session_state.game_board)
-
-            # Show game status (winner/draw/current player)
-            if game_over:
-                winner_player = (
-                    "X" if "X wins" in status else "O" if "O wins" in status else None
-                )
-                if winner_player:
-                    winner_num = "1" if winner_player == "X" else "2"
-                    winner_model = selected_p1 if winner_player == "X" else selected_p2
-                    st.success(
-                        f"🏆 Game Over! Player {winner_num} ({winner_model}) wins!"
-                    )
-                else:
-                    st.info("🤝 Game Over! It's a draw!")
+        # Show game status (winner/draw/current player)
+        if game_over:
+            winner_player = (
+                "X" if "X wins" in status else "O" if "O wins" in status else None
+            )
+            if winner_player:
+                winner_num = "1" if winner_player == "X" else "2"
+                winner_model = selected_p1 if winner_player == "X" else selected_p2
+                st.success(f"🏆 Game Over! Player {winner_num} ({winner_model}) wins!")
             else:
-                # Show current player status
-                current_player = st.session_state.game_board.current_player
-                player_num = "1" if current_player == "X" else "2"
-                current_model_name = (
-                    selected_p1 if current_player == "X" else selected_p2
-                )
+                st.info("🤝 Game Over! It's a draw!")
+        else:
+            # Show current player status
+            current_player = st.session_state.game_board.current_player
+            player_num = "1" if current_player == "X" else "2"
+            current_model_name = selected_p1 if current_player == "X" else selected_p2
 
-                show_agent_status(
-                    f"Player {player_num} ({current_model_name})",
-                    "It's your turn",
-                )
+            show_agent_status(
+                f"Player {player_num} ({current_model_name})",
+                "It's your turn",
+            )
 
-        with col2:
-            # Display move history
-            display_move_history()
+        display_move_history()
 
         if not st.session_state.game_paused and not game_over:
             # Thinking indicator
@@ -528,7 +607,7 @@ def main():
                     if game_over:
                         logger.info(f"Game Over - {status}")
                         if "wins" in status:
-                            st.success(f"�� Game Over! {status}")
+                            st.success(f"🏆 Game Over! {status}")
                         else:
                             st.info(f"🤝 Game Over! {status}")
                         st.session_state.game_paused = True
