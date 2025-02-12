@@ -52,7 +52,7 @@ streamlit run cookbook/examples/apps/tic_tac_toe/app.py
 
 ## How It Works
 
-The game consists of three main components:
+The game consists of three agents:
 
 1. **Master Agent (Referee)**
    - Coordinates the game
@@ -60,26 +60,20 @@ The game consists of three main components:
    - Maintains game state
    - Determines game outcome
 
-2. **Player Agents**
+2. **Two Player Agents**
    - Make strategic moves
    - Analyze board state
    - Follow game rules
    - Respond to opponent moves
 
-3. **Web Interface**
-   - Displays game board
-   - Shows move history
-   - Allows model selection
-   - Provides game controls
-
 ## Available Models
 
 The game supports various AI models:
-- GPT-4 (OpenAI)
-- Claude (Anthropic)
+- GPT-4o (OpenAI)
+- GPT-o3-mini (OpenAI)
 - Gemini (Google)
-- GPT-3.5 Mini
-- Llama 3
+- Llama 3 (Groq)
+- Claude (Anthropic)
 
 ## Game Features
 
@@ -103,14 +97,6 @@ The game supports various AI models:
    - Move timing
    - Strategy tracking
    - Game statistics
-
-## Contributing
-
-Feel free to contribute to this example by:
-- Adding new AI models
-- Improving the UI/UX
-- Enhancing game strategies
-- Adding new features
 
 ## Support
 
