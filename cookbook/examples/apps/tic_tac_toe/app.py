@@ -342,10 +342,10 @@ def main():
         st.markdown("### Game Controls")
 
         available_models = {
-            "Gemini": "gemini",
             "GPT-4o": "gpt-4o",
-            "Claude": "claude",
             "GPT-o3-mini": "gpt-o3-mini",
+            "Gemini": "gemini",
+            "Claude": "claude",
             "Llama 3": "llama",
         }
 
