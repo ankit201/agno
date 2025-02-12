@@ -1,12 +1,7 @@
-import io
-
 import nest_asyncio
 import streamlit as st
 from agents import DEFAULT_MODELS, MODELS, get_tic_tac_toe
-from agno.agent import Agent
-from agno.media import Image as AgnoImage
 from agno.utils.log import logger
-from PIL import Image as PILImage
 from utils import TicTacToeBoard
 
 nest_asyncio.apply()
@@ -327,87 +322,6 @@ def display_move_history():
         )
 
 
-def extract_board_state_from_image(image) -> str:
-    """
-    Use GPT-4o to analyze the Tic Tac Toe board image and return the board state.
-    """
-    vision_agent = Agent(
-        name="Vision Agent", model=DEFAULT_MODELS["vision"].get_model()
-    )
-
-    img_byte_arr = io.BytesIO()
-    image.save(img_byte_arr, format="PNG")
-    img_byte_arr = img_byte_arr.getvalue()
-
-    image_obj = AgnoImage(content=img_byte_arr)
-
-    prompt = """Analyze this Tic Tac Toe board image. Return ONLY a 3x3 matrix showing the board state where:
-- Use 'X' for X moves
-- Use 'O' for O moves
-- Use '_' for empty spaces
-Do not add any explanation or formatting. Just return exactly 3 lines with 3 characters each.
-Example:
-XO_
-_X_
-O__"""
-
-    logger.info(f"Vision Agent Prompt: {prompt}")
-
-    response = vision_agent.run(prompt, images=[image_obj])
-
-    logger.info(f"Vision Agent Response: {response.content}")
-
-    # Clean up the response to handle potential formatting
-    board_state = response.content.strip().replace("```", "").strip()
-
-    rows = [row.strip() for row in board_state.split("\n") if row.strip()]
-    if len(rows) != 3 or any(len(row) != 3 for row in rows):
-        raise ValueError("Invalid board state format from vision model")
-
-    logger.info(f"Parsed Board State:\n{'\n'.join(rows)}")
-
-    return "\n".join(rows)
-
-
-def initialize_board_from_state(board_state: str) -> TicTacToeBoard:
-    """
-    Initialize a TicTacToeBoard from a string representation.
-    The input should be a 3x3 matrix with X, O, and _ characters.
-    Example:
-    XO_
-    _X_
-    O__
-    """
-    board = TicTacToeBoard()
-    rows = board_state.strip().split("\n")
-
-    if len(rows) != 3:
-        raise ValueError(f"Invalid board state: expected 3 rows, got {len(rows)}")
-
-    for i, row in enumerate(rows):
-        if len(row) != 3:
-            raise ValueError(
-                f"Invalid row length in row {i}: expected 3, got {len(row)}"
-            )
-
-        for j, cell in enumerate(row):
-            if cell == "X" or cell == "O":
-                board.board[i][j] = cell
-            elif cell == "_" or cell == " ":
-                board.board[i][j] = " "
-            else:
-                raise ValueError(f"Invalid character in board state: {cell}")
-
-    x_count = sum(row.count("X") for row in board.board)
-    o_count = sum(row.count("O") for row in board.board)
-    board.current_player = "O" if x_count > o_count else "X"
-
-    logger.info(f"Initialized board state:\n{board.get_board_state()}")
-    logger.info(f"Next player: {board.current_player}")
-
-    return board
-
-
 def main():
     st.markdown(
         "<h1 class='main-title'>Tic Tac Toe AI Battle</h1>", unsafe_allow_html=True
@@ -492,32 +406,6 @@ def main():
                     st.session_state.move_history = []
                     st.session_state.game_paused = False
                     st.rerun()
-
-        st.markdown("### Start from Image")
-        uploaded_file = st.file_uploader(
-            "Upload a Tic Tac Toe board image", type=["png", "jpg", "jpeg"]
-        )
-
-        if uploaded_file is not None and not st.session_state.game_started:
-            try:
-                image = PILImage.open(uploaded_file)
-                st.image(image, caption="Uploaded board image", width=200)
-
-                if st.button("Start Game from Image"):
-                    with st.spinner("Analyzing board image..."):
-                        board_state = extract_board_state_from_image(image)
-
-                    st.session_state.master_agent = get_tic_tac_toe(debug_mode=True)
-                    st.session_state.game_board = initialize_board_from_state(
-                        board_state
-                    )
-                    st.session_state.game_started = True
-                    st.session_state.move_history = []
-                    st.session_state.game_paused = False
-                    st.rerun()
-            except Exception as e:
-                st.error(f"Error processing image: {str(e)}")
-                logger.error(f"Image processing error: {str(e)}")
 
     # Update the header to show current models
     if st.session_state.game_started:
