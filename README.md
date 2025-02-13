@@ -15,7 +15,7 @@
 
 ## Overview
 
-[Agno](https://docs.agno.com) is a lightweight framework for building multi-modal Agents.
+[Agno](https://docs.agno.com) is a lightweight library for building multi-modal Agents. Multi-modal Agents are capable of understanding and generating text, images, audio, video, and structured data.
 
 ## Simple, Fast, and Agnostic
 
@@ -23,7 +23,7 @@ Agno is designed with three core principles:
 
 - **Simplicity**: No graphs, chains, or convoluted patterns — just pure python.
 - **Uncompromising Performance**: Blazing fast agents with a minimal memory footprint.
-- **Truly Agnostic**: Any model, any provider, any modality. Future-proof agents.
+- **Truly Agnostic**: Any model, any provider, any modality. Agno is designed to be the container for AGI.
 
 ## Key features
 
@@ -31,9 +31,9 @@ Here's why you should build Agents with Agno:
 
 - **Lightning Fast**: Agent creation is ~10,000x faster than LangGraph (see [performance](#performance)).
 - **Model Agnostic**: Use any model, any provider, no lock-in.
-- **Multi Modal**: Native support for text, image, audio and video.
+- **Multi Modal**: Native support for input and output text, image, audio and video.
 - **Multi Agent**: Delegate tasks across a team of specialized agents.
-- **Memory Management**: Store user sessions and agent state in a database.
+- **Memory Management**: Store agent sessions and state in a database.
 - **Knowledge Stores**: Use vector databases for Agentic RAG or dynamic few-shot.
 - **Structured Outputs**: Make Agents respond with structured data.
 - **Monitoring**: Track agent sessions and performance in real-time on [agno.com](https://app.agno.com).
@@ -47,7 +47,7 @@ pip install -U agno
 
 ## What are Agents?
 
-Agents are autonomous programs that use language models to achieve tasks. They solve problems by running tools, accessing knowledge and memory to improve responses.
+Agents are autonomous programs that use language models to achieve tasks. They solve problems by running tools and using knowledge and memory to improve responses.
 
 Instead of a rigid binary definition, let's think of Agents in terms of agency and autonomy.
 
