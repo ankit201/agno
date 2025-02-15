@@ -1,108 +1,83 @@
-# Agno Hackathon
+# Hackathon Resources
 
-## Setup
+Thank you for using Agno to build your hackathon project! Here you'll find setup guides, examples, and resources to bring your multimodal agents to life.
 
-### Create and activate a virtual environment
+## Environment Setup
+
+Let's get your environment setup for the hackathon. Here are the steps:
+
+1. Create a virtual environment
+2. Install libraries
+3. Export your API keys
+
+### Create a virtual environment
+
+You can use `python3 -m venv` or `uv` to create a virtual environment.
+
+- Standard python
 
 ```shell
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### Export your API keys
+- Using uv
 
 ```shell
-export OPENAI_API_KEY=***
+uv venv --python 3.12
+source .venv/bin/activate
 ```
 
 ### Install libraries
 
+Install the `agno` python package along with the models and tools you want to use.
+
+- Standard python
+
 ```shell
-pip install -U openai agno
+pip install -U agno openai
 ```
 
-## Example - Basic Agent
+- Using uv
 
-```python
-from agno.agent import Agent
-from agno.models.openai import OpenAIChat
-
-agent = Agent(
-    model=OpenAIChat(id="gpt-4o"),
-    description="You are an enthusiastic news reporter with a flair for storytelling!",
-    markdown=True
-)
-agent.print_response("Tell me about a breaking news story from New York.", stream=True)
+```shell
+uv pip install -U agno openai
 ```
 
-## Example - Image Agent
+### Export your API keys
 
-```python
-from agno.agent import Agent
-from agno.media import Image
-from agno.models.openai import OpenAIChat
+Export the API keys for the models and tools you want to use.
 
-agent = Agent(
-    model=OpenAIChat(id="gpt-4o"),
-    markdown=True,
-)
-
-agent.print_response(
-    "Tell me about this image",
-    images=[
-        Image(
-            url="https://upload.wikimedia.org/wikipedia/commons/0/0c/GoldenGateBridge-001.jpg"
-        )
-    ],
-    stream=True,
-)
+```shell
+export OPENAI_API_KEY=***
+export GOOGLE_API_KEY=***
+export ELEVEN_LABS_API_KEY=***
 ```
 
-## Example - Audio Agent
+## Text Agents
 
-```python
-from agno.agent import Agent
-from agno.media import Audio
-from agno.models.openai import OpenAIChat
+Here are some examples of Text Agents built with Agno:
 
-url = "https://openaiassets.blob.core.windows.net/$web/API/docs/audio/alloy.wav"
+- [Simple Text Agent](cookbook/hackathon/examples/simple_text_agent.py)
+- [Agent with Tools](cookbook/hackathon/examples/agent_with_tools.py)
+- [Agent with Knowledge](cookbook/hackathon/examples/agent_with_knowledge.py)
+- [Agent with Structured Outputs](cookbook/hackathon/examples/structured_output.py)
+- [Research Agent](cookbook/hackathon/examples/research_agent.py)
+- [Youtube Agent](cookbook/hackathon/examples/youtube_agent.py)
 
-agent = Agent(
-    model=OpenAIChat(id="gpt-4o-audio-preview", modalities=["text"]),
-    markdown=True,
-)
-agent.print_response("What is in this audio?", audio=[Audio(url=url, format="wav")])
-```
+## Image Agents
 
-## Example - Video Agent
+- [Image Input + Tools](cookbook/hackathon/examples/image_input_with_tools.py)
+- [Generate Image](cookbook/hackathon/examples/generate_image.py)
+- [Image to Structured Output](cookbook/hackathon/examples/image_to_structured_output.py)
 
-```python
-from pathlib import Path
+## Audio Agents
 
-from agno.agent import Agent
-from agno.media import Video
-from agno.models.google import Gemini
+- [Audio Input](cookbook/hackathon/examples/audio_input.py)
 
-agent = Agent(
-    model=Gemini(id="gemini-2.0-flash-exp"),
-    markdown=True,
-)
+## Video Agents
 
-# Run: `wget https://storage.googleapis.com/generativeai-downloads/images/GreatRedSpot.mp4` to download a sample video
-video_path = Path(__file__).parent.joinpath("sample_video.mp4")
-
-agent.print_response("Tell me about this video?", videos=[Video(filepath=video_path)])
-```
-
-
-The following model providers provide the most multimodal support:
-- Gemini - Image, Audio and Video input
-- OpenAI - Image and Audio input
-- Anthropic - Image input
-- Groq - Image input
-- Mistral - Image input
-
-For more information, see the [model providers](https://docs.agno.com/models/compatibility#multimodal-support) documentation.
+- [Video Input](cookbook/hackathon/examples/video_input.py)
 
 ### Use Agent UI to give an interface to your agent
 
