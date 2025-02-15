@@ -1,6 +1,6 @@
 # Tic Tac Toe AI Battle
 
-This example demonstrates how to build an interactive Tic Tac Toe game where AI agents compete against each other. The application showcases how to:
+This example shows how to build an interactive Tic Tac Toe game where AI agents compete against each other. The application showcases how to:
 - Coordinate multiple AI agents in a turn-based game
 - Use different language models for different players
 - Create an interactive web interface with Streamlit
@@ -33,7 +33,7 @@ pip install -r cookbook/examples/apps/tic_tac_toe/requirements.txt
 The game supports multiple AI models. Export the API keys for the models you want to use:
 
 ```shell
-# Required for OpenAI models (GPT-4, GPT-3.5)
+# Required for OpenAI models
 export OPENAI_API_KEY=***
 
 # Optional - for additional models

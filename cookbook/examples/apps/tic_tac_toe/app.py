@@ -1,8 +1,16 @@
+from textwrap import dedent
+
 import nest_asyncio
 import streamlit as st
-from agents import DEFAULT_MODELS, MODELS, get_tic_tac_toe
+from agents import get_tic_tac_toe_referee
 from agno.utils.log import logger
-from utils import TicTacToeBoard
+from utils import (
+    CUSTOM_CSS,
+    TicTacToeBoard,
+    display_board,
+    display_move_history,
+    show_agent_status,
+)
 
 nest_asyncio.apply()
 
@@ -14,374 +22,73 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-CUSTOM_CSS = """
-<style>
-.main-title {
-    text-align: center;
-    font-size: 3em;
-    font-weight: bold;
-    padding: 0.5em 0;
-    color: white;
-}
-.subtitle {
-    text-align: center;
-    color: #666;
-    margin-bottom: 1em;
-}
-.game-board {
-    display: grid;
-    grid-template-columns: repeat(3, 80px);
-    gap: 5px;
-    justify-content: center;
-    margin: 1em auto;
-    background: #666;
-    padding: 5px;
-    border-radius: 8px;
-    width: fit-content;
-}
-.board-cell {
-    width: 80px;
-    height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2em;
-    font-weight: bold;
-    background-color: #2b2b2b;
-    color: #fff;
-    transition: all 0.3s ease;
-    margin: 0;
-    padding: 0;
-}
-.board-cell:hover {
-    background-color: #3b3b3b;
-}
-.agent-status {
-    background-color: #1e1e1e;
-    border-left: 4px solid #4CAF50;
-    padding: 10px;
-    margin: 10px auto;
-    border-radius: 4px;
-    max-width: 600px;
-    text-align: center;
-}
-.agent-thinking {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #2b2b2b;
-    padding: 10px;
-    border-radius: 5px;
-    margin: 10px auto;
-    border-left: 4px solid #FFA500;
-    max-width: 600px;
-}
-.move-history {
-    background-color: #2b2b2b;
-    padding: 15px;
-    border-radius: 10px;
-    margin: 10px 0;
-}
-
-.thinking-container {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1000;
-    min-width: 300px;
-}
-
-.agent-thinking {
-    background-color: rgba(43, 43, 43, 0.95);
-    border: 1px solid #4CAF50;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-}
-
-/* Move History Updates */
-.history-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.history-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px; /* Controls spacing between columns */
-    width: 100%;
-    margin: 0; /* Remove left/right margins */
-    padding: 0;
-}
-
-.history-column-left,
-.history-column-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start; /* Ensures columns fill available space nicely */
-    margin: 0;
-    padding: 0;
-    width: 100%;
-}
-
-.move-entry {
-    display: flex;
-    align-items: center;
-    padding: 12px;
-    margin: 8px 0;
-    background-color: #2b2b2b;
-    border-radius: 4px;
-    width: 100%; /* Removed fixed width so entries span the column */
-    box-sizing: border-box;
-}
-
-.move-entry.player1 {
-    border-left: 4px solid #4CAF50;
-}
-
-.move-entry.player2 {
-    border-left: 4px solid #f44336;
-}
-
-/* Mini-board styling inside moves */
-.mini-board {
-    display: grid;
-    grid-template-columns: repeat(3, 25px);
-    gap: 2px;
-    background: #444;
-    padding: 2px;
-    border-radius: 4px;
-    margin-right: 15px;
-}
-
-.mini-cell {
-    width: 25px;
-    height: 25px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: bold;
-    background-color: #2b2b2b;
-    color: #fff;
-}
-
-.mini-cell.highlight.player1 {
-    background-color: #4CAF50;
-    color: white;
-}
-
-.mini-cell.highlight.player2 {
-    background-color: #f44336;
-    color: white;
-}
-
-/* Move info styling */
-.move-info {
-    flex-grow: 1;
-    padding-left: 12px;
-}
-
-.move-number {
-    font-weight: bold;
-    margin-right: 10px;
-}
-
-.move-number.player1 {
-    color: #4CAF50;
-}
-
-.move-number.player2 {
-    color: #f44336;
-}
-</style>
-"""
-
+# Load custom CSS with dark mode support
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 
-def display_board(board: TicTacToeBoard):
-    """Display the Tic Tac Toe board using Streamlit"""
-    board_html = '<div class="game-board">'
-
-    for i in range(3):
-        for j in range(3):
-            cell_value = board.board[i][j]
-            board_html += f'<div class="board-cell">{cell_value}</div>'
-
-    board_html += "</div>"
-    st.markdown(board_html, unsafe_allow_html=True)
-
-
-def show_agent_status(agent_name: str, status: str):
-    """Display the current agent status"""
-    st.markdown(
-        f"""<div class="agent-status">
-            🤖 <b>{agent_name}</b>: {status}
-        </div>""",
-        unsafe_allow_html=True,
-    )
-
-
-def show_thinking_indicator(agent_name: str):
-    """Show a thinking indicator for the current agent"""
-    st.markdown(
-        f"""<div class="agent-thinking">
-            <div style="margin-right: 10px;">🔄</div>
-            <div>{agent_name} is thinking...</div>
-        </div>""",
-        unsafe_allow_html=True,
-    )
-
-
-def create_mini_board_html(
-    board_state: list, highlight_pos: tuple = None, is_player1: bool = True
-) -> str:
-    """Create HTML for a mini board with player-specific highlighting"""
-    html = '<div class="mini-board">'
-    for i in range(3):
-        for j in range(3):
-            highlight = (
-                f"highlight player{1 if is_player1 else 2}"
-                if highlight_pos and (i, j) == highlight_pos
-                else ""
-            )
-            html += f'<div class="mini-cell {highlight}">{board_state[i][j]}</div>'
-    html += "</div>"
-    return html
-
-
-def display_move_history():
-    """Display the move history with mini boards in two columns"""
-    st.markdown(
-        '<h3 style="margin-bottom: 30px;">📜 Game History</h3>',
-        unsafe_allow_html=True,
-    )
-    history_container = st.empty()
-
-    if "move_history" in st.session_state and st.session_state.move_history:
-        # Split moves into player 1 and player 2 moves
-        p1_moves = []
-        p2_moves = []
-        current_board = [[" " for _ in range(3)] for _ in range(3)]
-
-        # Process all moves first
-        for move in st.session_state.move_history:
-            row, col = map(int, move["move"].split(","))
-            is_player1 = "Player 1" in move["player"]
-            symbol = "X" if is_player1 else "O"
-            current_board[row][col] = symbol
-            board_copy = [row[:] for row in current_board]
-
-            move_html = f"""<div class="move-entry player{1 if is_player1 else 2}">
-                {create_mini_board_html(board_copy, (row, col), is_player1)}
-                <div class="move-info">
-                    <div class="move-number player{1 if is_player1 else 2}">Move #{move['number']}</div>
-                    <div>{move['player']}</div>
-                    <div style="font-size: 0.9em; color: #888">Position: ({row}, {col})</div>
-                </div>
-            </div>"""
-
-            if is_player1:
-                p1_moves.append(move_html)
-            else:
-                p2_moves.append(move_html)
-
-        max_moves = max(len(p1_moves), len(p2_moves))
-        history_content = '<div class="history-grid">'
-
-        # Left column (Player 1)
-        history_content += '<div class="history-column-left">'
-        for i in range(max_moves):
-            entry_html = ""
-            # Player 1 move
-            if i < len(p1_moves):
-                entry_html += p1_moves[i]
-            history_content += entry_html
-        history_content += "</div>"
-
-        # Right column (Player 2)
-        history_content += '<div class="history-column-right">'
-        for i in range(max_moves):
-            entry_html = ""
-            # Player 2 move
-            if i < len(p2_moves):
-                entry_html += p2_moves[i]
-            history_content += entry_html
-        history_content += "</div>"
-
-        history_content += "</div>"
-
-        # Display the content
-        history_container.markdown(history_content, unsafe_allow_html=True)
-    else:
-        history_container.markdown(
-            """<div style="text-align: center; color: #666; padding: 20px;">
-                No moves yet. Start the game to see the history!
-            </div>""",
-            unsafe_allow_html=True,
-        )
-
-
 def main():
-    st.markdown(
-        "<h1 class='main-title'>Tic Tac Toe AI Battle</h1>", unsafe_allow_html=True
-    )
+    ####################################################################
+    # App header
+    ####################################################################
+    st.markdown("<h1 class='main-title'>Agent Tic Tac Toe</h1>", unsafe_allow_html=True)
     st.markdown(
         "<p class='subtitle'>Watch AI agents battle it out in Tic Tac Toe!</p>",
         unsafe_allow_html=True,
     )
 
+    ####################################################################
     # Initialize session state
+    ####################################################################
     if "game_started" not in st.session_state:
         st.session_state.game_started = False
         st.session_state.game_paused = False
         st.session_state.move_history = []
 
-    # Sidebar controls
     with st.sidebar:
         st.markdown("### Game Controls")
-
-        available_models = {
-            "GPT-4o": "gpt-4o",
-            "GPT-o3-mini": "gpt-o3-mini",
-            "Gemini": "gemini",
-            "Claude": "claude",
-            "Llama 3": "llama",
+        model_options = {
+            "gpt-4o": "openai:gpt-4o",
+            "o3-mini": "openai:o3-mini",
+            "claude": "anthropic:claude-3-5-sonnet-20241022",
+            "gemini-flash": "google:gemini-2.0-flash",
+            "gemini-pro": "google:gemini-2.0-pro-exp-02-05",
+            "llama-3.3": "groq:llama-3.3-70b-versatile",
         }
-
-        # Model selection dropdowns
+        ################################################################
+        # Model selection
+        ################################################################
         col1, col2 = st.columns(2)
         with col1:
-            selected_p1 = st.selectbox(
-                "Player 1 (X) Model",
-                list(available_models.keys()),
-                index=list(available_models.values()).index("gpt-o3-mini"),
+            selected_p_x = st.selectbox(
+                "Select Player X",
+                list(model_options.keys()),
+                index=list(model_options.keys()).index("gpt-4o"),
                 key="model_p1",
             )
         with col2:
-            selected_p2 = st.selectbox(
-                "Player 2 (O) Model",
-                list(available_models.keys()),
-                index=list(available_models.values()).index("gemini"),
+            selected_p_o = st.selectbox(
+                "Select Player O",
+                list(model_options.keys()),
+                index=list(model_options.keys()).index("claude"),
                 key="model_p2",
             )
 
-        # Game control buttons
+        ################################################################
+        # Game controls
+        ################################################################
         col1, col2 = st.columns(2)
         with col1:
             if not st.session_state.game_started:
                 if st.button("▶️ Start Game"):
-                    # Get selected models
-                    model_p1 = MODELS[available_models[selected_p1]]
-                    model_p2 = MODELS[available_models[selected_p2]]
-
-                    st.session_state.master_agent = get_tic_tac_toe(
-                        model_x=model_p1, model_o=model_p2, debug_mode=True
+                    st.session_state.referee_agent = get_tic_tac_toe_referee(
+                        model_x=model_options[selected_p_x],
+                        model_o=model_options[selected_p_o],
+                        debug_mode=True,
                     )
                     st.session_state.game_board = TicTacToeBoard()
                     st.session_state.game_started = True
-                    st.session_state.move_history = []
                     st.session_state.game_paused = False
+                    st.session_state.move_history = []
                     st.rerun()
             else:
                 game_over, _ = st.session_state.game_board.get_game_state()
@@ -391,35 +98,31 @@ def main():
                     ):
                         st.session_state.game_paused = not st.session_state.game_paused
                         st.rerun()
-
         with col2:
             if st.session_state.game_started:
                 if st.button("🔄 New Game"):
-                    # Get selected models
-                    model_p1 = MODELS[available_models[selected_p1]]
-                    model_p2 = MODELS[available_models[selected_p2]]
-
-                    st.session_state.master_agent = get_tic_tac_toe(
-                        model_x=model_p1, model_o=model_p2, debug_mode=True
+                    st.session_state.referee_agent = get_tic_tac_toe_referee(
+                        model_x=model_options[selected_p_x],
+                        model_o=model_options[selected_p_o],
+                        debug_mode=True,
                     )
                     st.session_state.game_board = TicTacToeBoard()
-                    st.session_state.move_history = []
                     st.session_state.game_paused = False
+                    st.session_state.move_history = []
                     st.rerun()
 
-    # Update the header to show current models
+    ####################################################################
+    # Header showing current models
+    ####################################################################
     if st.session_state.game_started:
         st.markdown(
-            f"<h3 style='color:#87CEEB; text-align:center;'>{selected_p1} vs {selected_p2}</h3>",
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            "<h3 style='color:#87CEEB; text-align:center;'>Select models and start the game!</h3>",
+            f"<h3 style='color:#87CEEB; text-align:center;'>{selected_p_x} vs {selected_p_o}</h3>",
             unsafe_allow_html=True,
         )
 
+    ####################################################################
     # Main game area
+    ####################################################################
     if st.session_state.game_started:
         game_over, status = st.session_state.game_board.get_game_state()
 
@@ -432,7 +135,7 @@ def main():
             )
             if winner_player:
                 winner_num = "1" if winner_player == "X" else "2"
-                winner_model = selected_p1 if winner_player == "X" else selected_p2
+                winner_model = selected_p_x if winner_player == "X" else selected_p_o
                 st.success(f"🏆 Game Over! Player {winner_num} ({winner_model}) wins!")
             else:
                 st.info("🤝 Game Over! It's a draw!")
@@ -440,7 +143,7 @@ def main():
             # Show current player status
             current_player = st.session_state.game_board.current_player
             player_num = "1" if current_player == "X" else "2"
-            current_model_name = selected_p1 if current_player == "X" else selected_p2
+            current_model_name = selected_p_x if current_player == "X" else selected_p_o
 
             show_agent_status(
                 f"Player {player_num} ({current_model_name})",
@@ -463,11 +166,12 @@ def main():
 
             valid_moves = st.session_state.game_board.get_valid_moves()
 
-            response = st.session_state.master_agent.team[0].run(
-                f"""Current board state:\n{st.session_state.game_board.get_board_state()}\n
+            response = st.session_state.referee_agent.team[0].run(
+                dedent(f"""\
+                Current board state:\n{st.session_state.game_board.get_board_state()}\n
                 Available valid moves (row, col): {valid_moves}\n
                 Choose your next move from the valid moves list above.
-                Respond with ONLY two numbers for row and column, e.g. "1 2".""",
+                Respond with ONLY two numbers for row and column, e.g. "1 2"."""),
                 stream=False,
             )
 
@@ -507,13 +211,14 @@ def main():
                     st.rerun()
                 else:
                     logger.error(f"Invalid move attempt: {message}")
-                    response = st.session_state.master_agent.team[0].run(
-                        f"""Invalid move: {message}
-                        
+                    response = st.session_state.referee_agent.team[0].run(
+                        dedent(f"""\
+                        Invalid move: {message}
+
                         Current board state:\n{st.session_state.game_board.get_board_state()}\n
                         Available valid moves (row, col): {valid_moves}\n
                         Please choose a valid move from the list above.
-                        Respond with ONLY two numbers for row and column, e.g. "1 2".""",
+                        Respond with ONLY two numbers for row and column, e.g. "1 2"."""),
                         stream=False,
                     )
                     st.rerun()
@@ -523,19 +228,29 @@ def main():
                 st.error(f"Error processing move: {str(e)}")
                 st.rerun()
     else:
-        st.info("👈 Click 'Start Game' in the sidebar to begin!")
+        st.info("👈 Press 'Start Game' to begin!")
 
+    ####################################################################
+    # About section
+    ####################################################################
     st.sidebar.markdown("### About")
     st.sidebar.markdown(f"""
-    Watch two AI agents play Tic Tac Toe:
-    - Player 1 (X): {selected_p1}
-    - Player 2 (O): {selected_p2}
-    - Master Agent: {DEFAULT_MODELS['master'].display_name} - Coordinates the game
-    
-    The agents use strategic thinking to:
-    - Make winning moves
-    - Block opponent's winning moves
-    - Control the center and corners
+    ### 🎮 Tic Tac Toe Battle
+    Watch two models compete in real-time!
+
+    **Current Players:**
+    * 🔵 Player X: `{selected_p_x}`
+    * 🔴 Player O: `{selected_p_o}`
+    * 🎯 Referee: `{model_options[selected_p_x]}`
+
+    **How it Works:**
+    Each AI agent analyzes the board and employs strategic thinking to:
+    * 🏆 Find winning moves
+    * 🛡️ Block opponent victories
+    * ⭐ Control strategic positions
+    * 🤔 Plan multiple moves ahead
+
+    Built with Streamlit and Agno
     """)
 
 
