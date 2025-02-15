@@ -15,7 +15,7 @@
 
 ## Overview
 
-[Agno](https://docs.agno.com) is a lightweight library for building multi-modal Agents. Multi-modal Agents are capable of understanding and generating text, images, audio, video, and structured data.
+[Agno](https://docs.agno.com) is a lightweight library for building multi-modal Agents.
 
 ## Simple, Fast, and Agnostic
 
@@ -220,14 +220,14 @@ python agent_team.py
 
 ## Performance
 
-Agno is designed for high performance agentic systems:
+At Agno, we're obsessed with performance. Agno is designed to power high performance agentic systems:
 
 - Agent instantiation: ~2μs on average (~10,000x faster than LangGraph).
 - Memory footprint: ~3.75Kib on average (~50x less memory than LangGraph).
 
 > Tested on an Apple M4 Mackbook Pro.
 
-While an Agent's performance is bottlenecked by inference, we must do everything possible to minimize execution time, reduce memory usage, and parallelize tool calls. These numbers are may seem trivial, but they add up even at medium scale.
+While an Agent's performance is bottlenecked by inference, we must do everything possible to minimize execution time, reduce memory usage, and parallelize tool calls. These numbers may seem trivial at first, but they add up even at a reasonably small scale.
 
 ### Instantiation time
 
