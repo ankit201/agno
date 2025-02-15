@@ -2,6 +2,8 @@
 
 Thank you for using Agno to build your hackathon project! Here you'll find setup guides, examples, and resources to bring your multimodal agents to life.
 
+> Read this documentation on [Agno Docs](https://docs.agno.com/hackathon)
+
 ## Environment Setup
 
 Let's get your environment setup for the hackathon. Here are the steps:
@@ -90,29 +92,3 @@ Here are some examples of Text Agents built with Agno:
 - [Video Caption](cookbook/hackathon/multimodal_examples/video_caption.py)
 - [Video Generation using Replicate](cookbook/hackathon/multimodal_examples/video_generate_using_replicate.py)
 - [Video Generation using Models Lab](cookbook/hackathon/multimodal_examples/video_generate_using_models_lab.py)
-
-### Use Agent UI to give an interface to your agent
-
-Run:
-
-```shell
-agno setup
-```
-
-```
-python cookbook/playground/demo.py
-```
-
-Then head to: [app.agno.com/playground](https://app.agno.com/playground) to see your agent in action!
-
-## Model usage:
-
-`cookbook/hackathon/models`
-
-## Examples:
-
-`cookbook/hackathon/examples`
-
-## Multimodal Examples:
-
-`cookbook/hackathon/multimodal_examples`
