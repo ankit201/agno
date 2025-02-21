@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field
 import pytest
+from pydantic import BaseModel, Field
 
 from agno.agent import Agent, RunResponse  # noqa
 from agno.models.openai import OpenAIChat
@@ -100,7 +100,7 @@ async def test_async_tool_use_stream():
     assert any("TSLA" in r.content for r in responses if r.content)
 
 
-def test_tool_use_with_structured_outputs():
+def test_tool_use_with_native_structured_outputs():
     class StockPrice(BaseModel):
         price: float = Field(..., description="The price of the stock")
         currency: str = Field(..., description="The currency of the stock")
