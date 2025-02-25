@@ -1006,10 +1006,6 @@ class Model(ABC):
                 assistant_message.metrics.input_tokens + assistant_message.metrics.output_tokens
             )
 
-        # Additional timing metrics (e.g., from Groq, Ollama)
-        if assistant_message.metrics.additional_metrics is None:
-            assistant_message.metrics.additional_metrics = {}
-
         additional_metrics = [
             "prompt_time",
             "completion_time",
@@ -1022,6 +1018,10 @@ class Model(ABC):
         ]
 
         for metric in additional_metrics:
+            # Additional timing metrics (e.g., from Groq, Ollama)
+            if assistant_message.metrics.additional_metrics is None:
+                assistant_message.metrics.additional_metrics = {}
+
             if hasattr(response_usage, metric) and getattr(response_usage, metric) is not None:
                 assistant_message.metrics.additional_metrics[metric] = getattr(response_usage, metric)
 
