@@ -46,8 +46,9 @@ def main():
         model_options = {
             "gpt-4o": "openai:gpt-4o",
             "o3-mini": "openai:o3-mini",
-            "claude-3.5": "anthropic:claude-3-5-sonnet-20241022",
-            "claude-3.7": "anthropic:claude-3-7-sonnet-20250219",
+            "claude-3.5": "anthropic:claude-3-5-sonnet",
+            "claude-3.7": "anthropic:claude-3-7-sonnet",
+            "claude-3.7-thinking": "anthropic:claude-3-7-sonnet-thinking",
             "gemini-flash": "google:gemini-2.0-flash",
             "gemini-pro": "google:gemini-2.0-pro-exp-02-05",
             "llama-3.3": "groq:llama-3.3-70b-versatile",
@@ -58,7 +59,7 @@ def main():
         selected_p_x = st.selectbox(
             "Select Player X",
             list(model_options.keys()),
-            index=list(model_options.keys()).index("claude-3.7"),
+            index=list(model_options.keys()).index("claude-3.7-thinking"),
             key="model_p1",
         )
         selected_p_o = st.selectbox(

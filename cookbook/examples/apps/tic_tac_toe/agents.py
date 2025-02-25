@@ -56,11 +56,16 @@ def get_model_for_provider(provider: str, model_name: str):
     elif provider == "google":
         return Gemini(id=model_name)
     elif provider == "anthropic":
-        if model_name == "claude-3-5-sonnet-20241022":
-            return Claude(id=model_name, max_tokens=8192)
-        elif model_name == "claude-3-7-sonnet-20250219":
+        if model_name == "claude-3-5-sonnet":
+            return Claude(id="claude-3-5-sonnet-20241022", max_tokens=8192)
+        elif model_name == "claude-3-7-sonnet":
             return Claude(
-                id=model_name,
+                id="claude-3-7-sonnet-20250219",
+                max_tokens=8192,
+            )
+        elif model_name == "claude-3-7-sonnet-thinking":
+            return Claude(
+                id="claude-3-7-sonnet-20250219",
                 max_tokens=8192,
                 thinking={"type": "enabled", "budget_tokens": 4096},
             )
