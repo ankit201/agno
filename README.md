@@ -15,7 +15,7 @@
 
 ## Overview
 
-**[Agno](https://docs.agno.com) is a lightweight framework for building Multimodal Agents with memory, knowledge and tools.**
+**[Agno](https://docs.agno.com) is a lightweight library for building Multimodal Agents with memory, knowledge and tools.**
 
 1. Build lightning-fast Agents that work with text, image, audio and video.
 2. Add memory, knowledge and tools as needed.
