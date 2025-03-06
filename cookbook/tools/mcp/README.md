@@ -1,29 +1,16 @@
-# Model Context Protocol (MCP)
+# Agents + MCP
 
 Model Context Protocol (MCP) gives Agents the ability to interact with external systems through a standardized interface. Using Agno's MCP integration, you can build Agents that can connect to any MCP-compatible service.
 
 ## Examples in this Directory
 
-### 1. Filesystem Agent (filesystem.py)
+1. Filesystem Agent (`filesystem.py`)
 
 This example demonstrates how to create an agent that can explore, analyze, and provide insights about files and directories on your computer.
 
-**Features:**
-- Navigate your filesystem to answer questions
-- Examine file contents
-- Analyze directory structures
-- Provide summaries of codebases
-
-### 2. GitHub Agent (github.py)
+2. GitHub Agent (`github.py`)
 
 This example shows how to create an agent that can explore GitHub repositories, analyze issues, pull requests, and more.
-
-**Features:**
-- List open issues in repositories
-- Show recent pull requests
-- Display repository statistics
-- Find issues by label
-- Analyze contributor activity
 
 ## Getting Started
 
@@ -43,7 +30,7 @@ export OPENAI_API_KEY="your_openai_api_key"
 
 > For the GitHub example, create a Github PAT following [these steps](https://github.com/modelcontextprotocol/servers/tree/main/src/github#setup).
 
-### Running the Examples
+### Run the Examples
 
 ```bash
 python filesystem.py
