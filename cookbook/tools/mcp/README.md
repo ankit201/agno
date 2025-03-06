@@ -1,4 +1,4 @@
-# Agents + MCP
+# MCP Agents using Agno
 
 Model Context Protocol (MCP) gives Agents the ability to interact with external systems through a standardized interface. Using Agno's MCP integration, you can build Agents that can connect to any MCP-compatible service.
 
