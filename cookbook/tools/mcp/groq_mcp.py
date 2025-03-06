@@ -1,16 +1,15 @@
-"""📁 MCP Filesystem Agent - Your Personal File Explorer!
+"""📁 Groq + MCP = Lightning Fast Agents
 
-This example shows how to create a filesystem agent that uses MCP to explore,
-analyze, and provide insights about files and directories. The agent leverages the Model
-Context Protocol (MCP) to interact with the filesystem, allowing it to answer questions
-about file contents, directory structures, and more.
+This example demonstrates how to create a high-performance filesystem agent by combining
+Groq's fast LLM inference with the Model Context Protocol (MCP). This combination delivers
+exceptional speed while maintaining powerful filesystem exploration capabilities.
 
 Example prompts to try:
 - "What files are in the current directory?"
 - "Show me the content of README.md"
 - "What is the license for this project?"
 - "Find all Python files in the project"
-- "Summarize the main functionality of the codebase"
+- "Analyze the performance benefits of using Groq with MCP"
 
 Run: `pip install agno mcp openai` to install the dependencies
 """
@@ -27,20 +26,23 @@ from mcp.client.stdio import stdio_client
 
 
 async def create_filesystem_agent(session):
-    """Create and configure a filesystem agent with MCP tools."""
+    """Create and configure a high-performance filesystem agent with Groq and MCP."""
     # Initialize the MCP toolkit
     mcp_tools = MCPTools(session=session)
     await mcp_tools.initialize()
 
-    # Create an agent with the MCP toolkit
+    # Create an agent with the MCP toolkit and Groq's fast LLM
     return Agent(
         model=Groq(id="llama-3.3-70b-versatile"),
         tools=[mcp_tools],
         instructions=dedent("""\
-            You are a filesystem assistant. Help users explore files and directories.
+            You are a high-performance filesystem assistant powered by Groq and MCP.
+            Your combination of Groq's fast inference and MCP's efficient context handling
+            makes you exceptionally quick at exploring and analyzing files.
 
-            - Navigate the filesystem to answer questions
+            - Navigate the filesystem with lightning speed to answer questions
             - Use the list_allowed_directories tool to find directories that you can access
+            - Highlight the performance benefits of the Groq+MCP combination when relevant
             - Provide clear context about files you examine
             - Use headings to organize your responses
             - Be concise and focus on relevant information\
@@ -76,14 +78,23 @@ if __name__ == "__main__":
     # Basic example - exploring project license
     asyncio.run(run_agent("What is the license for this project?"))
 
-    # File content example
+    # Performance demonstration example
     asyncio.run(
-        run_agent("Show me the content of README.md and explain what this project does")
+        run_agent(
+            "Show me the README.md and explain how Groq with MCP enables fast file analysis"
+        )
     )
 
 
 # More example prompts to explore:
 """
+Performance-focused queries:
+1. "Analyze a large Python file and explain how Groq+MCP makes this fast"
+2. "Compare the directory structure and explain how MCP efficiently provides this information"
+3. "Find all TODO comments in the codebase and demonstrate the speed advantage"
+4. "Process multiple configuration files simultaneously and explain the performance benefits"
+5. "Explain how the Groq+MCP combination optimizes context handling for large codebases"
+
 File exploration queries:
 1. "What are the main Python packages used in this project?"
 2. "Show me all configuration files and explain their purpose"
@@ -97,11 +108,4 @@ Code analysis queries:
 3. "Find potential security issues in the codebase"
 4. "How is error handling implemented across the project?"
 5. "Analyze the API endpoints in this project"
-
-Documentation queries:
-1. "Generate a summary of the project documentation"
-2. "What features are documented but not implemented?"
-3. "Are there any TODOs or FIXMEs in the codebase?"
-4. "Create a high-level overview of the project's functionality"
-5. "What's missing from the documentation?"
 """
