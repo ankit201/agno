@@ -53,15 +53,16 @@ async def main() -> None:
         ):
             logger.info("---*--- Creating new MCP Agent ---*---")
             mcp_agent = get_mcp_agent(
-                model_str=selected_model, server_ids=mcp_server_ids
+                model_str=selected_model,
+                num_history_response=num_history_response,
+                mcp_tools_list=mcp_tools_list,
+                server_ids=mcp_server_ids,
             )
             st.session_state["mcp_agent"] = mcp_agent
             st.session_state["current_model"] = selected_model
             st.session_state["mcp_server_ids"] = mcp_server_ids
         else:
             mcp_agent = st.session_state["mcp_agent"]
-            st.session_state["current_model"] = selected_model
-            st.session_state["mcp_server_ids"] = mcp_server_ids
     except Exception as e:
         st.error(f"Failed to initialize MCP Agent: {str(e)}")
         return
@@ -106,7 +107,13 @@ async def main() -> None:
     ####################################################################
     # Session selector
     ####################################################################
-    session_selector_widget(mcp_agent, selected_model)
+    session_selector_widget(
+        mcp_agent=mcp_agent,
+        model_str=selected_model,
+        num_history_response=num_history_response,
+        mcp_tools_list=mcp_tools_list,
+        mcp_server_ids=mcp_server_ids,
+    )
 
     ####################################################################
     # About section

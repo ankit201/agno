@@ -190,7 +190,13 @@ def example_inputs() -> None:
             )
 
 
-def session_selector_widget(agent: Agent, model_str: str) -> None:
+def session_selector_widget(
+    agent: Agent,
+    model_str: str,
+    num_history_response: int,
+    mcp_tools_list: List[MCPTools],
+    mcp_server_ids: List[str],
+) -> None:
     """Display a session selector in the sidebar.
 
     Args:
@@ -240,6 +246,9 @@ def session_selector_widget(agent: Agent, model_str: str) -> None:
             st.session_state["mcp_agent"] = get_mcp_agent(
                 model_str=model_str,
                 session_id=selected_session_id,
+                num_history_response=num_history_response,
+                mcp_tools_list=mcp_tools_list,
+                server_ids=mcp_server_ids,
             )
             st.rerun()
 
