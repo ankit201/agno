@@ -14,9 +14,29 @@ from utils import (
     utilities_widget,
 )
 
+from cookbook.examples.apps.mcp_agent.mcp_manager_2 import initialize_mcp_tools
+
 nest_asyncio.apply()
 
 apply_theme()
+
+
+# # Define your server configurations
+# server_configs = [
+#     {
+#         'id': 'github',
+#         'command': 'npx',
+#         'args': ['-y', '@modelcontextprotocol/server-github'],
+#         'env_vars': {'GITHUB_TOKEN': 'GitHub Personal Access Token'}
+#     },
+#     # Add more server configs as needed
+#     # {
+#     #     'id': 'another-server',
+#     #     'command': 'another-command',
+#     #     'args': ['arg1', 'arg2'],
+#     #     'env_vars': {'API_KEY': 'Description of API key'}
+#     # }
+# ]
 
 
 def main() -> None:
@@ -35,14 +55,25 @@ def main() -> None:
     # Settings
     ####################################################################
     selected_model = get_selected_model()
+    # mcp_tools_list = initialize_mcp_tools(server_configs)
 
     ####################################################################
     # Initialize Agent
     ####################################################################
     try:
-        mcp_agent = initialize_agent(selected_model)
+        if (
+            "mcp_agent" not in st.session_state
+            or st.session_state["mcp_agent"] is None
+            or st.session_state.get("current_model") != selected_model
+        ):
+            logger.info("---*--- Creating new MCP Agent ---*---")
+            mcp_agent = get_mcp_agent(model_str=selected_model)
+            st.session_state["mcp_agent"] = mcp_agent
+            st.session_state["current_model"] = selected_model
+        else:
+            mcp_agent = st.session_state["mcp_agent"]
     except Exception as e:
-        st.error(f"Failed to initialize agent: {str(e)}")
+        st.error(f"Failed to initialize MCP Agent: {str(e)}")
         return
 
     ####################################################################
@@ -57,9 +88,9 @@ def main() -> None:
         return
 
     ####################################################################
-    # Load runs from memory
+    # Load agent runs (i.e. chat history) from memory
     ####################################################################
-    load_chat_history(mcp_agent)
+    load_agent_runs(mcp_agent)
 
     ####################################################################
     # Show example inputs
@@ -71,19 +102,6 @@ def main() -> None:
     ####################################################################
     if prompt := st.chat_input("✨ How can I help, bestie?"):
         add_message("user", prompt)
-
-    ####################################################################
-    # Display chat history
-    ####################################################################
-    for message in st.session_state["messages"]:
-        if message["role"] in ["user", "assistant"]:
-            _content = message["content"]
-            if _content is not None:
-                with st.chat_message(message["role"]):
-                    # Display tool calls if they exist in the message
-                    if "tool_calls" in message and message["tool_calls"]:
-                        display_tool_calls(st.empty(), message["tool_calls"])
-                    st.markdown(_content)
 
     ####################################################################
     # Generate response for user message
@@ -102,27 +120,12 @@ def main() -> None:
     about_widget()
 
 
-def initialize_agent(selected_model: str) -> Agent:
-    """Initialize or retrieve the MCP agent from session state."""
-    if (
-        "mcp_agent" not in st.session_state
-        or st.session_state["mcp_agent"] is None
-        or st.session_state.get("current_model") != selected_model
-    ):
-        logger.info("---*--- Creating new MCP Agent ---*---")
-        mcp_agent = get_mcp_agent(model_str=selected_model)
-        st.session_state["mcp_agent"] = mcp_agent
-        st.session_state["current_model"] = selected_model
-    else:
-        mcp_agent = st.session_state["mcp_agent"]
-
-    return mcp_agent
-
-
-def load_chat_history(mcp_agent: Agent) -> None:
-    """Load chat history from agent memory."""
+def load_agent_runs(mcp_agent: Agent) -> None:
+    """Load agent runs from agent memory."""
+    # Load the agent runs
     agent_runs = mcp_agent.memory.runs
     if len(agent_runs) > 0:
+        # If there are runs, load the messages
         logger.debug("Loading run history")
         st.session_state["messages"] = []
         # Loop through the runs and add the messages to the messages list
@@ -132,8 +135,20 @@ def load_chat_history(mcp_agent: Agent) -> None:
             if _run.response is not None:
                 add_message("assistant", _run.response.content, _run.response.tools)
     else:
+        # If there are no runs, create an empty messages list
         logger.debug("No run history found")
         st.session_state["messages"] = []
+
+    # Display the agent messages
+    for message in st.session_state["messages"]:
+        if message["role"] in ["user", "assistant"]:
+            _content = message["content"]
+            if _content is not None:
+                with st.chat_message(message["role"]):
+                    # Display tool calls if they exist in the message
+                    if "tool_calls" in message and message["tool_calls"]:
+                        display_tool_calls(st.empty(), message["tool_calls"])
+                    st.markdown(_content)
 
 
 def process_last_message(mcp_agent: Agent) -> None:
