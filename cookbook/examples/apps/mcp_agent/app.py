@@ -11,7 +11,8 @@ from utils import (
     apply_theme,
     display_tool_calls,
     example_inputs,
-    get_mcp_tools_and_instructions,
+    get_mcp_tools_list,
+    get_num_history_response,
     get_selected_model,
     session_selector_widget,
     utilities_widget,
@@ -37,7 +38,8 @@ async def main() -> None:
     # Settings
     ####################################################################
     selected_model = get_selected_model()
-    mcp_tools_list, mcp_instructions = await get_mcp_tools_and_instructions()
+    num_history_response = get_num_history_response()
+    mcp_tools_list, mcp_server_ids = get_mcp_tools_list()
 
     ####################################################################
     # Initialize Agent
@@ -47,13 +49,19 @@ async def main() -> None:
             "mcp_agent" not in st.session_state
             or st.session_state["mcp_agent"] is None
             or st.session_state.get("current_model") != selected_model
+            or st.session_state.get("mcp_server_ids") != mcp_server_ids
         ):
             logger.info("---*--- Creating new MCP Agent ---*---")
-            mcp_agent = get_mcp_agent(model_str=selected_model)
+            mcp_agent = get_mcp_agent(
+                model_str=selected_model, server_ids=mcp_server_ids
+            )
             st.session_state["mcp_agent"] = mcp_agent
             st.session_state["current_model"] = selected_model
+            st.session_state["mcp_server_ids"] = mcp_server_ids
         else:
             mcp_agent = st.session_state["mcp_agent"]
+            st.session_state["current_model"] = selected_model
+            st.session_state["mcp_server_ids"] = mcp_server_ids
     except Exception as e:
         st.error(f"Failed to initialize MCP Agent: {str(e)}")
         return

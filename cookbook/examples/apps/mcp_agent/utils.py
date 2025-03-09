@@ -1,23 +1,23 @@
 import os
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import streamlit as st
 from agents import get_mcp_agent
 from agno.agent import Agent
 from agno.tools.mcp import MCPTools
 from agno.utils.log import logger
-from mcp_manager import MCPManager, MCPServerConfig
+from mcp_manager import MCPManager
 
 
 @st.cache_resource()
-def get_mcp_manager(server_configs: Tuple[MCPServerConfig]) -> MCPManager:
+def get_mcp_manager(server_ids: Tuple[str]) -> MCPManager:
     """Get the MCPManager instance.
 
     This function is cached using st.cache_resource to avoid recreating
     the MCPManager instance on each rerun.
     """
     # Use synchronous creation instead of async
-    return MCPManager.create_sync(list(server_configs))
+    return MCPManager.create_sync(list(server_ids))
 
 
 def get_selected_model() -> str:
@@ -48,16 +48,30 @@ def get_selected_model() -> str:
     return model_options[selected_model]
 
 
-async def get_mcp_tools_and_instructions() -> Tuple[List[MCPTools], Optional[str]]:
+def get_num_history_response() -> int:
+    """Return the number of messages from history to send to the LLM.
+
+    Returns:
+        int: The number of messages from history to include
+    """
+    num_history = st.sidebar.slider(
+        "Number of previous messages to include",
+        min_value=1,
+        max_value=20,
+        value=5,
+        step=1,
+        help="Controls how many previous messages are sent to the LLM for context",
+    )
+    return num_history
+
+
+def get_mcp_tools_list() -> Union[List[MCPTools], List[str]]:
     """Get a list of MCPTools and instructions for the Agent.
 
     Returns:
-        Tuple[List[MCPTools], Optional[str]]: A tuple containing a list of MCPTools and instructions for using them.
+        Union[List[MCPTools], List[str]]: A list of MCPTools or a list of server IDs.
     """
-    mcp_tools = []
-    mcp_instructions = None
-    mcp_server_configs = []
-
+    mcp_server_ids = []
     with st.sidebar:
         st.markdown("#### 🛠️ Select MCP Tools")
         add_github_mcp_tools = st.checkbox("GitHub", key="github_mcp_tools")
@@ -71,22 +85,15 @@ async def get_mcp_tools_and_instructions() -> Tuple[List[MCPTools], Optional[str
             )
             if github_token:
                 os.environ["GITHUB_TOKEN"] = github_token
-                mcp_server_configs.append(
-                    MCPServerConfig(
-                        id="github",
-                        command="npx",
-                        args=["-y", "@modelcontextprotocol/server-github"],
-                        env_vars=["GITHUB_TOKEN"],
-                    )
-                )
+                mcp_server_ids.append("github")
             else:
                 st.error("GitHub Token is required to use GitHub MCP Tools")
 
-    # Get manager without awaiting
-    mcp_manager = get_mcp_manager(tuple(mcp_server_configs))
+    # Get tools from the MCPManager
+    mcp_manager = get_mcp_manager(tuple(mcp_server_ids))
     mcp_tools_list = mcp_manager.get_mcp_tools_list()
 
-    return mcp_tools_list, mcp_instructions
+    return mcp_tools_list, mcp_server_ids
 
 
 def add_message(

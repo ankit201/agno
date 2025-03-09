@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 from agno.tools.mcp import MCPTools
 from agno.utils.log import logger
@@ -23,45 +23,77 @@ class MCPServerConfig(BaseModel):
     )
 
 
+mcp_server_configs = {
+    "github": MCPServerConfig(
+        id="github",
+        command="npx",
+        args=["-y", "@modelcontextprotocol/server-github"],
+        env_vars=["GITHUB_TOKEN"],
+    ),
+    "filesystem": MCPServerConfig(
+        id="filesystem",
+        command="npx",
+        args=["-y", "@modelcontextprotocol/server-filesystem", "."],
+    ),
+    "git": MCPServerConfig(
+        id="git",
+        command="uvx",
+        args=["mcp-server-git"],
+    ),
+    "brave-search": MCPServerConfig(
+        id="brave-search",
+        command="npx",
+        args=["-y", "@modelcontextprotocol/server-brave-search"],
+        env_vars=["BRAVE_API_KEY"],
+    ),
+}
+
+
 class MCPManager:
     """Manager for Model Context Protocol (MCP) server connections."""
 
-    def __init__(self, server_configs: List[MCPServerConfig]):
-        """Create an MCPManager that manages multiple MCP server configurations.
+    def __init__(self, server_ids: List[str]):
+        """Create an MCPManager that manages multiple MCP server connections.
 
         Args:
-            server_configs: List of MCPServerConfig objects.
+            server_ids: List of server IDs to initialize (must exist in mcp_server_configs).
         """
-        self.server_configs = server_configs
+        self.server_ids = server_ids
+        self.server_configs = []
+        for server_id in server_ids:
+            if server_id not in mcp_server_configs:
+                raise ValueError(
+                    f"Unknown server ID: {server_id}. Available servers: {', '.join(mcp_server_configs.keys())}"
+                )
+            self.server_configs.append(mcp_server_configs[server_id])
         self.mcp_tools_map: Dict[str, MCPTools] = {}
         self._initialized = False
 
     @classmethod
-    async def create(cls, server_configs: List[MCPServerConfig]) -> "MCPManager":
+    async def create(cls, server_ids: List[str]) -> "MCPManager":
         """Factory method to create and initialize an MCPManager.
 
         Args:
-            server_configs: List of MCPServerConfig objects.
+            server_ids: List of server IDs to initialize.
 
         Returns:
             An initialized MCPManager instance.
         """
-        manager = cls(server_configs)
+        manager = cls(server_ids)
         await manager.initialize()
         return manager
 
-    # Synchronous alternative for non-async contexts
     @classmethod
-    def create_sync(cls, server_configs: List[MCPServerConfig]) -> "MCPManager":
+    def create_sync(cls, server_ids: List[str]) -> "MCPManager":
         """Synchronous factory method to create and initialize an MCPManager.
 
         Args:
-            server_configs: List of MCPServerConfig objects.
+            server_ids: List of server IDs to initialize.
 
         Returns:
             An initialized MCPManager instance.
         """
-        manager = cls(server_configs)
+        manager = cls(server_ids)
 
         # Run initialization in a new event loop
         loop = asyncio.new_event_loop()

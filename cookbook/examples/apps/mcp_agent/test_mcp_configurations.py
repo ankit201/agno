@@ -1,42 +1,11 @@
-import asyncio
-
-from mcp_manager import MCPManager, MCPServerConfig
+from mcp_manager import MCPManager, mcp_server_configs
 
 
-async def async_main():
+def main():
     # MCP server configurations to test
-    server_configs = [
-        MCPServerConfig(
-            id="github",
-            command="npx",
-            args=["-y", "@modelcontextprotocol/server-github"],
-            env_vars=["GITHUB_TOKEN"],
-        ),
-        MCPServerConfig(
-            id="filesystem",
-            command="npx",
-            args=["-y", "@modelcontextprotocol/server-filesystem", "."],
-        ),
-        MCPServerConfig(
-            id="memory",
-            command="npx",
-            args=["-y", "@modelcontextprotocol/server-memory"],
-        ),
-        MCPServerConfig(
-            id="git",
-            command="uvx",
-            args=["mcp-server-git"],
-        ),
-        MCPServerConfig(
-            id="brave-search",
-            command="npx",
-            args=["-y", "@modelcontextprotocol/server-brave-search"],
-            env_vars=["BRAVE_API_KEY"],
-        ),
-    ]
-
+    server_configs = list(mcp_server_configs.keys())
     # Initialize the MCP manager
-    mcp_manager = await MCPManager.create(server_configs)
+    mcp_manager = MCPManager.create_sync(server_configs)
     mcp_tools = mcp_manager.get_mcp_tools_list()
 
     # Print the MCPTools objects
@@ -45,4 +14,4 @@ async def async_main():
 
 
 if __name__ == "__main__":
-    asyncio.run(async_main())
+    main()

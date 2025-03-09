@@ -1,13 +1,17 @@
 from pathlib import Path
 from textwrap import dedent
-from typing import Optional
+from typing import List, Optional
 
 from agno.agent import Agent
+from agno.embedder.openai import OpenAIEmbedder
+from agno.knowledge.url import UrlKnowledge
 from agno.models.anthropic import Claude
 from agno.models.google import Gemini
 from agno.models.groq import Groq
 from agno.models.openai import OpenAIChat
 from agno.storage.agent.sqlite import SqliteAgentStorage
+from agno.tools.mcp import MCPTools
+from agno.vectordb.lancedb import LanceDb, SearchType
 
 # ************* Setup Paths *************
 # Define the current working directory
@@ -26,6 +30,16 @@ agent_storage = SqliteAgentStorage(
     table_name="mcp_agent_sessions",  # Table to store agent sessions
     db_file=str(tmp_dir.joinpath("agents.db")),  # SQLite database file
 )
+# Store MCP Documentation in a knowledge base
+agent_knowledge = UrlKnowledge(
+    urls=["https://modelcontextprotocol.io/llms-full.txt"],
+    vector_db=LanceDb(
+        uri=str(tmp_dir.joinpath("mcp_documentation")),
+        table_name="mcp_documentation",
+        search_type=SearchType.hybrid,
+        embedder=OpenAIEmbedder(id="text-embedding-3-small"),
+    ),
+)
 # *************************************
 
 
@@ -34,6 +48,8 @@ def get_mcp_agent(
     model_str: str = "openai:gpt-4o",
     session_id: Optional[str] = None,
     num_history_responses: int = 5,
+    mcp_tools_list: Optional[List[MCPTools]] = None,
+    server_ids: Optional[List[str]] = None,
     debug_mode: bool = True,
 ) -> Agent:
     model = get_model_for_provider(model_str)
