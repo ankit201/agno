@@ -128,7 +128,7 @@ def display_tool_calls(tool_calls_container, tools):
                 metrics = tool_call.get("metrics", {})
 
                 # Add timing information
-                execution_time = metrics.get("time", 0)
+                execution_time = metrics.time
                 execution_time_str = (
                     f"{execution_time:.2f}s"
                     if isinstance(execution_time, (int, float))
