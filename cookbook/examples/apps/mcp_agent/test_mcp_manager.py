@@ -1,6 +1,9 @@
+import asyncio
+
 from mcp_manager import MCPManager
 
-if __name__ == "__main__":
+
+def main():
     test_server_configs = [
         {
             "id": "github",
@@ -16,3 +19,10 @@ if __name__ == "__main__":
     # Print the MCPTools objects for demonstration.
     for idx, mcp_tool in enumerate(mcp_tools, start=1):
         print(f"MCPTools {idx}: {mcp_tool}")
+
+    # Clean up connections before exiting - now using non-async version
+    mcp_manager.cleanup()
+
+
+if __name__ == "__main__":
+    main()

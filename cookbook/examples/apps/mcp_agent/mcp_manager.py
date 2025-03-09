@@ -94,10 +94,10 @@ class MCPManager:
         try:
             # Run initialization in the new loop
             logger.info("Starting MCP manager initialization")
-            loop.run_until_complete(asyncio.wait_for(self.initialize_mcp_manager()))
+            loop.run_until_complete(self.initialize_mcp_manager())
             logger.info("MCP manager initialization completed")
         except asyncio.TimeoutError:
-            logger.warning("MCP initialization timed out after 30 seconds")
+            logger.warning("MCP initialization timed out after 10 seconds")
         except Exception as e:
             logger.error(f"Error during MCP initialization: {e}")
         finally:
@@ -201,10 +201,31 @@ class MCPManager:
             )
             raise
 
-    async def cleanup(self):
-        """Clean up all MCP connections."""
+    def cleanup(self):
+        """Clean up all MCP connections.
+
+        This method can be called from both async and non-async contexts.
+        """
+        # Create a new event loop for cleanup if we're not in an async context
+        if not asyncio.get_event_loop().is_running():
+            loop = asyncio.new_event_loop()
+            try:
+                loop.run_until_complete(self._async_cleanup())
+            finally:
+                loop.close()
+        else:
+            # If we're already in an async context, create a task
+            asyncio.create_task(self._async_cleanup())
+
+        # Clear connections immediately
+        self.connections.clear()
+
+    async def _async_cleanup(self):
+        """Internal async method to clean up all MCP connections."""
+        if not self.connections:
+            return
+
         cleanup_tasks = [
             connection.cleanup() for connection in self.connections.values()
         ]
-        await asyncio.gather(*cleanup_tasks)
-        self.connections.clear()
+        await asyncio.gather(*cleanup_tasks, return_exceptions=True)
