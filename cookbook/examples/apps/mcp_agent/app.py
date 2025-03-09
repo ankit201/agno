@@ -15,26 +15,7 @@ from utils import (
 )
 
 nest_asyncio.apply()
-
 apply_theme()
-
-
-# # Define your server configurations
-# server_configs = [
-#     {
-#         'id': 'github',
-#         'command': 'npx',
-#         'args': ['-y', '@modelcontextprotocol/server-github'],
-#         'env_vars': {'GITHUB_TOKEN': 'GitHub Personal Access Token'}
-#     },
-#     # Add more server configs as needed
-#     # {
-#     #     'id': 'another-server',
-#     #     'command': 'another-command',
-#     #     'args': ['arg1', 'arg2'],
-#     #     'env_vars': {'API_KEY': 'Description of API key'}
-#     # }
-# ]
 
 
 def main() -> None:
