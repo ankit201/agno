@@ -48,7 +48,7 @@ def get_selected_model() -> str:
     return model_options[selected_model]
 
 
-def get_num_history_response() -> int:
+def get_num_history_responses() -> int:
     """Return the number of messages from history to send to the LLM.
 
     Returns:
@@ -193,16 +193,12 @@ def example_inputs() -> None:
 def session_selector_widget(
     agent: Agent,
     model_str: str,
-    num_history_response: int,
+    num_history_responses: int,
     mcp_tools_list: List[MCPTools],
     mcp_server_ids: List[str],
 ) -> None:
-    """Display a session selector in the sidebar.
+    """Display a session selector in the sidebar, if a new session is selected, the agent is restarted with the new session."""
 
-    Args:
-        agent: The MCP agent instance
-        model_str: The model identifier string
-    """
     if not agent.storage:
         return
 
@@ -246,7 +242,7 @@ def session_selector_widget(
             st.session_state["mcp_agent"] = get_mcp_agent(
                 model_str=model_str,
                 session_id=selected_session_id,
-                num_history_response=num_history_response,
+                num_history_responses=num_history_responses,
                 mcp_tools_list=mcp_tools_list,
                 server_ids=mcp_server_ids,
             )

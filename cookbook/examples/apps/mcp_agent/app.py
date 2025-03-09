@@ -12,7 +12,7 @@ from utils import (
     display_tool_calls,
     example_inputs,
     get_mcp_tools_list,
-    get_num_history_response,
+    get_num_history_responses,
     get_selected_model,
     session_selector_widget,
     utilities_widget,
@@ -27,10 +27,11 @@ async def main() -> None:
     # App header
     ####################################################################
     st.markdown(
-        "<h1 class='main-title'>Universal MCP Agent</h1>", unsafe_allow_html=True
+        "<h1 class='main-title'>Universal Agent Interface powered by MCP</h1>",
+        unsafe_allow_html=True,
     )
     st.markdown(
-        "<p class='subtitle'>Interact with MCP servers using an AI Agent</p>",
+        "<p class='subtitle'>A unified Agentic interface for MCP servers</p>",
         unsafe_allow_html=True,
     )
 
@@ -38,7 +39,7 @@ async def main() -> None:
     # Settings
     ####################################################################
     selected_model = get_selected_model()
-    num_history_response = get_num_history_response()
+    num_history_responses = get_num_history_responses()
     mcp_tools_list, mcp_server_ids = get_mcp_tools_list()
 
     ####################################################################
@@ -54,7 +55,7 @@ async def main() -> None:
             logger.info("---*--- Creating new MCP Agent ---*---")
             mcp_agent = get_mcp_agent(
                 model_str=selected_model,
-                num_history_response=num_history_response,
+                num_history_responses=num_history_responses,
                 mcp_tools_list=mcp_tools_list,
                 server_ids=mcp_server_ids,
             )
@@ -108,9 +109,9 @@ async def main() -> None:
     # Session selector
     ####################################################################
     session_selector_widget(
-        mcp_agent=mcp_agent,
+        agent=mcp_agent,
         model_str=selected_model,
-        num_history_response=num_history_response,
+        num_history_responses=num_history_responses,
         mcp_tools_list=mcp_tools_list,
         mcp_server_ids=mcp_server_ids,
     )
