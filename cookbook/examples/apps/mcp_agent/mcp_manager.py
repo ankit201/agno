@@ -26,20 +26,31 @@ class MCPConnection:
         # Create the stdio_client and manually enter its context to get the connection
         client = stdio_client(server_params)
         try:
+            logger.info(
+                f"Establishing connection to MCP server: {server_params.command} {' '.join(server_params.args)}"
+            )
             read, write = await client.__aenter__()
+            logger.info("Connection established, creating client session")
 
             # Create the ClientSession with the connection
             session = ClientSession(read, write)
 
             # Initialize MCPTools with the session
+            logger.info("Initializing MCPTools")
             mcp_tools = MCPTools(session=session)
             await mcp_tools.initialize()
+            logger.info("MCPTools initialized successfully")
 
             return cls(client, session, mcp_tools)
         except Exception as e:
             # Ensure client is closed if initialization fails
-            await client.__aexit__(type(e), e, None)
             logger.error(f"Failed to create MCP connection: {e}")
+            try:
+                await client.__aexit__(type(e), e, None)
+            except Exception as close_error:
+                logger.error(
+                    f"Error while closing client after failed initialization: {close_error}"
+                )
             raise
 
     async def cleanup(self):
@@ -77,7 +88,20 @@ class MCPManager:
         """
         self.server_configs = server_configs
         self.connections: Dict[str, MCPConnection] = {}
-        self._initialize_task = asyncio.create_task(self.initialize_mcp_manager())
+
+        # Create a new event loop for initialization
+        loop = asyncio.new_event_loop()
+        try:
+            # Run initialization in the new loop
+            logger.info("Starting MCP manager initialization")
+            loop.run_until_complete(asyncio.wait_for(self.initialize_mcp_manager()))
+            logger.info("MCP manager initialization completed")
+        except asyncio.TimeoutError:
+            logger.warning("MCP initialization timed out after 30 seconds")
+        except Exception as e:
+            logger.error(f"Error during MCP initialization: {e}")
+        finally:
+            loop.close()
 
     def get_mcp_tools(
         self, server_id: Optional[str] = None
@@ -103,8 +127,44 @@ class MCPManager:
 
     async def initialize_mcp_manager(self):
         """Initialize the MCPManager by creating MCPConnections for all server configurations."""
-        tasks = [self.create_mcp_connection(config) for config in self.server_configs]
-        await asyncio.gather(*tasks)
+        tasks = []
+        for config in self.server_configs:
+            # Check for required environment variables before creating tasks
+            server_id = config.get("id")
+            server_env_vars = config.get("env_vars", {})
+
+            logger.info(f"Checking environment variables for server '{server_id}'")
+            missing_vars = []
+            for var_name, var_desc in server_env_vars.items():
+                if not os.getenv(var_name):
+                    missing_vars.append(f"{var_name} - {var_desc}")
+                else:
+                    # Log that we found the variable (without showing its value)
+                    logger.info(f"Found environment variable: {var_name}")
+
+            if missing_vars:
+                logger.warning(
+                    f"Skipping server '{server_id}' due to missing environment variables:\n"
+                    + "\n".join(missing_vars)
+                )
+                continue
+
+            # Only create tasks for servers with all required env vars
+            logger.info(f"Creating connection task for server '{server_id}'")
+            tasks.append(self.create_mcp_connection(config))
+
+        if tasks:
+            logger.info(f"Starting initialization of {len(tasks)} MCP servers")
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+            # Log results
+            for i, result in enumerate(results):
+                if isinstance(result, Exception):
+                    logger.error(f"Server {i + 1} initialization failed: {result}")
+        else:
+            logger.warning(
+                "No MCP servers were initialized due to missing environment variables"
+            )
 
     async def create_mcp_connection(self, server_config: Dict[str, Any]):
         """Initialize an MCPConnection for a given server configuration."""
@@ -119,21 +179,8 @@ class MCPManager:
             )
 
         server_args = server_config.get("args", [])
-        server_env_vars = server_config.get("env_vars", {})
 
-        # Check for required environment variables
-        if server_env_vars:
-            missing_vars = []
-            for var_name, var_desc in server_env_vars.items():
-                if not os.getenv(var_name):
-                    missing_vars.append(f"{var_name} - {var_desc}")
-
-            if missing_vars:
-                raise ValueError(
-                    f"Missing environment variables for server '{server_id}':\n"
-                    + "\n".join(missing_vars)
-                )
-
+        logger.info(f"Creating MCP connection for server '{server_id}'")
         # Create server parameters
         server_params = StdioServerParameters(
             command=server_command,
@@ -142,9 +189,12 @@ class MCPManager:
 
         # Create the MCPConnection
         try:
+            logger.info(f"Attempting to connect to MCP server '{server_id}'")
             mcp_connection = await MCPConnection.create_mcp_connection(server_params)
             # Add the MCPConnection to the manager
             self.connections[server_id] = mcp_connection
+            logger.info(f"Successfully connected to MCP server '{server_id}'")
+            return mcp_connection
         except Exception as e:
             logger.error(
                 f"Failed to create MCP connection for server '{server_id}': {e}"
