@@ -7,6 +7,11 @@ from agno.utils.log import logger
 
 
 def get_selected_model() -> str:
+    """Return the selected model identifier based on user selection in the sidebar.
+
+    Returns:
+        str: The model identifier string in the format 'provider:model-name'
+    """
     model_options = {
         "gpt-4o": "openai:gpt-4o",
         "gpt-4.5": "openai:gpt-4.5-preview",
@@ -18,11 +23,13 @@ def get_selected_model() -> str:
         "gemini-pro": "gemini:gemini-2.0-pro-exp-02-05",
         "llama-3.3-70b": "groq:llama-3.3-70b-versatile",
     }
+    st.sidebar.markdown("#### :sparkles: Select a model")
     selected_model = st.sidebar.selectbox(
         "Select a model",
         options=list(model_options.keys()),
         index=list(model_options.keys()).index("gpt-4o"),
         key="selected_model",
+        label_visibility="collapsed",
     )
     return model_options[selected_model]
 
@@ -47,6 +54,9 @@ def display_tool_calls(tool_calls_container, tools):
         tool_calls_container: Streamlit container to display the tool calls
         tools: List of tool call dictionaries containing name, args, content, and metrics
     """
+    if not tools:
+        return
+
     try:
         with tool_calls_container.container():
             for tool_call in tools:
@@ -56,14 +66,19 @@ def display_tool_calls(tool_calls_container, tools):
                 metrics = tool_call.get("metrics", {})
 
                 # Add timing information
-                execution_time = metrics.get("time", "N/A")
+                execution_time = metrics.get("time", 0)
+                execution_time_str = (
+                    f"{execution_time:.2f}s"
+                    if isinstance(execution_time, (int, float))
+                    else "N/A"
+                )
 
                 with st.expander(
-                    f"🛠️ {tool_name.replace('_', ' ').title()} ({execution_time:.2f}s)",
+                    f"🛠️ {tool_name.replace('_', ' ').title()} ({execution_time_str})",
                     expanded=False,
                 ):
                     # Show query with syntax highlighting
-                    if isinstance(tool_args, dict) and "query" in tool_args:
+                    if isinstance(tool_args, dict) and tool_args.get("query"):
                         st.code(tool_args["query"], language="sql")
 
                     # Display arguments in a more readable format
@@ -74,47 +89,65 @@ def display_tool_calls(tool_calls_container, tools):
                     if content:
                         st.markdown("**Results:**")
                         try:
-                            st.json(content)
-                        except Exception as e:
+                            # Check if content is already a dictionary or can be parsed as JSON
+                            if isinstance(content, dict) or (
+                                isinstance(content, str)
+                                and content.strip().startswith(("{", "["))
+                            ):
+                                st.json(content)
+                            else:
+                                # If not JSON, show as markdown
+                                st.markdown(content)
+                        except Exception:
+                            # If JSON display fails, show as markdown
                             st.markdown(content)
 
     except Exception as e:
         logger.error(f"Error displaying tool calls: {str(e)}")
-        tool_calls_container.error("Failed to display tool results")
+        tool_calls_container.error(f"Failed to display tool results: {str(e)}")
 
 
-# def sidebar_widget() -> None:
-#     """Display a sidebar with sample user queries for Sage."""
-#     with st.sidebar:
-#         st.markdown("#### 📜 Try me!")
-#         if st.button("💡 US Tariffs"):
-#             add_message(
-#                 "user",
-#                 "Tell me about the tariffs the US is imposing in 2025",
-#             )
-#         if st.button("🤔 Reasoning Models"):
-#             add_message(
-#                 "user",
-#                 "Which is a better reasoning model: o3-mini or DeepSeek R1?",
-#             )
-#         if st.button("🤖 Tell me about Agno"):
-#             add_message(
-#                 "user",
-#                 "Tell me about Agno: https://github.com/agno-agi/agno and https://docs.agno.com",
-#             )
-#         if st.button("⚖️ Impact of AI Regulations"):
-#             add_message(
-#                 "user",
-#                 "Evaluate how emerging AI regulations could influence innovation, privacy, and ethical AI deployment in the near future.",
-#             )
+def example_inputs() -> None:
+    """Show example inputs for the MCP Agent."""
+    with st.sidebar:
+        st.markdown("#### :thinking_face: Try me!")
+        if st.button("Who are you?"):
+            add_message(
+                "user",
+                "Who are you?",
+            )
+        if st.button("What is your purpose?"):
+            add_message(
+                "user",
+                "What is your purpose?",
+            )
+        if st.button("Tell me about Agno"):
+            add_message(
+                "user",
+                "Tell me about Agno: https://github.com/agno-agi/agno and https://docs.agno.com",
+            )
 
 
 def session_selector_widget(agent: Agent, model_str: str) -> None:
-    """Display a session selector in the sidebar."""
-    if agent.storage:
+    """Display a session selector in the sidebar.
+
+    Args:
+        agent: The MCP agent instance
+        model_str: The model identifier string
+    """
+    if not agent.storage:
+        return
+
+    try:
+        # -*- Get all agent sessions.
         agent_sessions = agent.storage.get_all_sessions()
-        # Get session names if available, otherwise use IDs.
-        session_options = []
+
+        if not agent_sessions:
+            st.sidebar.info("No saved sessions found.")
+            return
+
+        # -*- Get session names if available, otherwise use IDs.
+        sessions_list = []
         for session in agent_sessions:
             session_id = session.session_id
             session_name = (
@@ -123,19 +156,21 @@ def session_selector_widget(agent: Agent, model_str: str) -> None:
                 else None
             )
             display_name = session_name if session_name else session_id
-            session_options.append({"id": session_id, "display": display_name})
+            sessions_list.append({"id": session_id, "display_name": display_name})
 
-        # Display session selector.
+        # -*- Display session selector.
+        st.sidebar.markdown("#### 💬 Session")
         selected_session = st.sidebar.selectbox(
             "Session",
-            options=[s["display"] for s in session_options],
+            options=[s["display_name"] for s in sessions_list],
             key="session_selector",
+            label_visibility="collapsed",
         )
-        # Find the selected session ID.
+        # -*- Find the selected session ID.
         selected_session_id = next(
-            s["id"] for s in session_options if s["display"] == selected_session
+            s["id"] for s in sessions_list if s["display_name"] == selected_session
         )
-
+        # -*- Update the selected session if it has changed.
         if st.session_state.get("mcp_agent_session_id") != selected_session_id:
             logger.info(
                 f"---*--- Loading {model_str} run: {selected_session_id} ---*---"
@@ -145,6 +180,43 @@ def session_selector_widget(agent: Agent, model_str: str) -> None:
                 session_id=selected_session_id,
             )
             st.rerun()
+
+        # -*- Show the rename session widget.
+        container = st.sidebar.container()
+        session_row = container.columns([3, 1], vertical_alignment="center")
+
+        # -*- Initialize session_edit_mode if needed.
+        if "session_edit_mode" not in st.session_state:
+            st.session_state.session_edit_mode = False
+
+        # -*- Show the session name.
+        with session_row[0]:
+            if st.session_state.session_edit_mode:
+                new_session_name = st.text_input(
+                    "Session Name",
+                    value=agent.session_name,
+                    key="session_name_input",
+                    label_visibility="collapsed",
+                )
+            else:
+                st.markdown(f"Session Name: **{agent.session_name}**")
+
+        # -*- Show the rename session button.
+        with session_row[1]:
+            if st.session_state.session_edit_mode:
+                if st.button("✓", key="save_session_name", type="primary"):
+                    if new_session_name:
+                        agent.rename_session(new_session_name)
+                        st.session_state.session_edit_mode = False
+                        container.success("Renamed!")
+                        # Trigger a rerun to refresh the sessions list
+                        st.rerun()
+            else:
+                if st.button("✎", key="edit_session_name"):
+                    st.session_state.session_edit_mode = True
+    except Exception as e:
+        logger.error(f"Error in session selector: {str(e)}")
+        st.sidebar.error("Failed to load sessions")
 
 
 def restart_agent():
@@ -157,14 +229,33 @@ def restart_agent():
 
 
 def export_chat_history():
-    """Export chat history as markdown."""
-    if "messages" in st.session_state:
-        chat_text = "# MCP Agent - Chat History\n\n"
-        for msg in st.session_state["messages"]:
-            role_label = "🤖 Assistant" if msg["role"] == "assistant" else "👤 User"
-            chat_text += f"### {role_label}\n{msg['content']}\n\n"
-        return chat_text
-    return ""
+    """Export chat history as markdown.
+
+    Returns:
+        str: Formatted markdown string of the chat history
+    """
+    if "messages" not in st.session_state or not st.session_state["messages"]:
+        return "# MCP Agent - Chat History\n\nNo messages to export."
+
+    chat_text = "# MCP Agent - Chat History\n\n"
+    for msg in st.session_state["messages"]:
+        role_label = "🤖 Assistant" if msg["role"] == "assistant" else "👤 User"
+        chat_text += f"### {role_label}\n{msg['content']}\n\n"
+
+        # Include tool calls if present
+        if msg.get("tool_calls"):
+            chat_text += "#### Tool Calls:\n"
+            for i, tool_call in enumerate(msg["tool_calls"]):
+                tool_name = tool_call.get("name", "Unknown Tool")
+                chat_text += f"**{i + 1}. {tool_name}**\n\n"
+                if "arguments" in tool_call:
+                    chat_text += (
+                        f"Arguments: ```json\n{tool_call['arguments']}\n```\n\n"
+                    )
+                if "content" in tool_call:
+                    chat_text += f"Results: ```\n{tool_call['content']}\n```\n\n"
+
+    return chat_text
 
 
 def utilities_widget() -> None:
@@ -188,44 +279,12 @@ def utilities_widget() -> None:
             st.sidebar.success("Chat history exported!")
 
 
-def rename_session_widget(agent: Agent) -> None:
-    """Rename the current session of the agent and save to storage."""
-    container = st.sidebar.container()
-    session_row = container.columns([3, 1], vertical_alignment="center")
-
-    # Initialize session_edit_mode if needed.
-    if "session_edit_mode" not in st.session_state:
-        st.session_state.session_edit_mode = False
-
-    with session_row[0]:
-        if st.session_state.session_edit_mode:
-            new_session_name = st.text_input(
-                "Session Name",
-                value=agent.session_name,
-                key="session_name_input",
-                label_visibility="collapsed",
-            )
-        else:
-            st.markdown(f"Session Name: **{agent.session_name}**")
-
-    with session_row[1]:
-        if st.session_state.session_edit_mode:
-            if st.button("✓", key="save_session_name", type="primary"):
-                if new_session_name:
-                    agent.rename_session(new_session_name)
-                    st.session_state.session_edit_mode = False
-                    container.success("Renamed!")
-        else:
-            if st.button("✎", key="edit_session_name"):
-                st.session_state.session_edit_mode = True
-
-
 def about_widget() -> None:
     """Display an about section in the sidebar."""
     st.sidebar.markdown("#### ℹ️ About")
     st.sidebar.markdown(
         """
-        The Universal MCP Agent lets you interact with any MCP server using an AI Agent.
+        The Universal MCP Agent lets you interact with MCP servers using a chat interface.
 
         Built with:
         - 🚀 [Agno](https://github.com/agno-agi/agno)
@@ -295,3 +354,18 @@ CUSTOM_CSS = """
     }
     </style>
 """
+
+
+# Add a function to handle theme customization
+def apply_theme():
+    """Apply custom theme settings to the Streamlit app."""
+    # Set page configuration
+    st.set_page_config(
+        page_title="Universal MCP Agent",
+        page_icon=":crystal_ball:",
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
+
+    # Apply custom CSS
+    st.markdown(CUSTOM_CSS, unsafe_allow_html=True)

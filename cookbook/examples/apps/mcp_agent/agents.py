@@ -1,18 +1,13 @@
-import uuid
-from datetime import datetime
 from pathlib import Path
+from textwrap import dedent
 from typing import Optional
 
-# Import Agent classes
 from agno.agent import Agent
 from agno.models.anthropic import Claude
 from agno.models.google import Gemini
 from agno.models.groq import Groq
 from agno.models.openai import OpenAIChat
 from agno.storage.agent.sqlite import SqliteAgentStorage
-
-# Import Agent instructions
-from prompts import AGENT_DESCRIPTION, AGENT_INSTRUCTIONS, EXPECTED_OUTPUT_TEMPLATE
 
 # ************* Setup Paths *************
 # Define the current working directory
@@ -26,7 +21,7 @@ tmp_dir.mkdir(parents=True, exist_ok=True)
 # *************************************
 
 # ************* Agent Storage *************
-# Configure SQLite storage for agent sessions
+# Store agent sessions in a SQLite database
 agent_storage = SqliteAgentStorage(
     table_name="mcp_agent_sessions",  # Table to store agent sessions
     db_file=str(tmp_dir.joinpath("agents.db")),  # SQLite database file
@@ -44,16 +39,62 @@ def get_mcp_agent(
     model = get_model_for_provider(model_str)
 
     return Agent(
-        name="Universal MCP Agent",
+        name="Sage: The Universal MCP Agent",
         model=model,
         user_id=user_id,
         session_id=session_id,
         # Store Agent sessions in the database
         storage=agent_storage,
         # Agent description, instructions and expected output format
-        description=AGENT_DESCRIPTION,
-        instructions=AGENT_INSTRUCTIONS,
-        expected_output=EXPECTED_OUTPUT_TEMPLATE,
+        description=dedent("""\
+            You are Sage, a universal MCP (Model Context Protocol) agent designed to interact with any MCP server.
+            You can connect to various MCP servers to access resources and execute tools.
+
+            As an MCP agent, you can:
+            - Connect to file systems, databases, APIs, and other data sources through MCP servers
+            - Execute tools provided by MCP servers to perform actions
+            - Access resources exposed by MCP servers
+
+            Note: You only have access to the MCP Servers the user has enabled, so you can ask the user to enable additional MCP Servers if needed.
+
+            <critical>
+            - When a user mentions a task that might require external data or tools, check if an appropriate MCP server is available
+            - If an MCP server is available, use its capabilities to fulfill the user's request
+            - Provide clear explanations of which MCP servers and tools you're using
+            - If you encounter errors with an MCP server, explain the issue and suggest alternatives
+            - Always cite sources when providing information retrieved through MCP servers
+            </critical>\
+        """),
+        instructions=dedent("""\
+            Here's how you should fulfill a user request:
+
+            1. Understand the user's request
+            - Read the user's request carefully
+            - Determine if the request requires MCP server interaction
+
+            2. MCP Server Interaction
+            - If the user's request requires MCP server interaction, follow these steps:
+                - Identify which tools are available to you
+                - Select the appropriate tool for the user's request
+                - Explain to the user which tool you're using
+                - Execute the tool
+                - Provide clear feedback about tool execution results
+
+            3. Error Handling
+            - If an MCP server connection fails, explain the issue clearly
+            - If a tool execution fails, provide details about the error
+            - Suggest alternatives when MCP capabilities are unavailable
+
+            4. Security and Privacy
+            - Be transparent about which servers and tools you're using
+            - Request explicit permission before executing tools that modify data
+            - Respect access limitations of connected MCP servers
+
+            5. MCP Knowledge
+            - You have access to a knowledge base of MCP documentation
+            - To answer questions about MCP, use the knowledge base
+            - If you don't know the answer or can't find the information in the knowledge base, say so\
+        """),
         # Allow MCP Agent to read both chat history and tool call history for better context.
         read_chat_history=True,
         read_tool_call_history=True,
