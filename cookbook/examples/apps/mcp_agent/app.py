@@ -6,9 +6,9 @@ from agno.utils.log import logger
 from utils import (
     CUSTOM_CSS,
     about_widget,
-    get_selected_model,
     add_message,
     display_tool_calls,
+    get_selected_model,
     rename_session_widget,
     session_selector_widget,
     utilities_widget,
@@ -31,7 +31,9 @@ def main() -> None:
     ####################################################################
     # App header
     ####################################################################
-    st.markdown("<h1 class='main-title'>Universal MCP Agent</h1>", unsafe_allow_html=True)
+    st.markdown(
+        "<h1 class='main-title'>Universal MCP Agent</h1>", unsafe_allow_html=True
+    )
     st.markdown(
         "<p class='subtitle'>Interact with any MCP server using an AI Agent</p>",
         unsafe_allow_html=True,
@@ -108,7 +110,9 @@ def main() -> None:
     # - Get the last message from the messages list
     # - If the last message is a user message, run the agent
     ####################################################################
-    last_message = (st.session_state["messages"][-1] if st.session_state["messages"] else None)
+    last_message = (
+        st.session_state["messages"][-1] if st.session_state["messages"] else None
+    )
     if last_message and last_message.get("role") == "user":
         question = last_message["content"]
         with st.chat_message("assistant"):

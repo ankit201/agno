@@ -166,6 +166,7 @@ def export_chat_history():
         return chat_text
     return ""
 
+
 def utilities_widget() -> None:
     """Display a utilities widget in the sidebar."""
     st.sidebar.markdown("---")
@@ -185,6 +186,7 @@ def utilities_widget() -> None:
             mime="text/markdown",
         ):
             st.sidebar.success("Chat history exported!")
+
 
 def rename_session_widget(agent: Agent) -> None:
     """Rename the current session of the agent and save to storage."""
