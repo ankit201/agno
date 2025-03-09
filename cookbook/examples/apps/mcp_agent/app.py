@@ -39,9 +39,9 @@ async def main() -> None:
     # Settings
     ####################################################################
     selected_model = get_selected_model()
-    num_history_responses = get_num_history_responses()
     mcp_server_config = get_mcp_server_config()
     mcp_server_id = mcp_server_config.id
+    num_history_responses = get_num_history_responses()
 
     ####################################################################
     # Initialize MCP Client and Agent

@@ -219,15 +219,10 @@ def example_inputs(server_id: str) -> None:
                     "Find open issues in the agno-agi/agno repository and summarize the top 3 most recent ones.",
                 )
         elif server_id == "filesystem":
-            if st.button("Tell me about the current directory"):
+            if st.button("Summarize the README"):
                 add_message(
                     "user",
-                    "Tell me about the current directory.",
-                )
-            if st.button("Find Python files"):
-                add_message(
-                    "user",
-                    "Find all Python files in the current directory and summarize what they do.",
+                    "If there is a README file in the current directory, summarize it.",
                 )
 
 
