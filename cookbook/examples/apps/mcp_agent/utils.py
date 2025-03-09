@@ -186,7 +186,7 @@ def example_inputs() -> None:
         if st.button("Tell me about Agno"):
             add_message(
                 "user",
-                "Tell me about Agno: https://github.com/agno-agi/agno and https://docs.agno.com",
+                "Tell me about Agno. Github repo: https://github.com/agno-agi/agno. You can read the README for more information.",
             )
 
 
@@ -325,7 +325,7 @@ def export_chat_history():
     return chat_text
 
 
-def utilities_widget() -> None:
+def utilities_widget(agent: Agent) -> None:
     """Display a utilities widget in the sidebar."""
     st.sidebar.markdown("---")
     st.sidebar.markdown("#### 🛠️ Utilities")
@@ -344,6 +344,10 @@ def utilities_widget() -> None:
             mime="text/markdown",
         ):
             st.sidebar.success("Chat history exported!")
+    if agent is not None and agent.knowledge is not None:
+        if st.sidebar.button("📚 Load Knowledge"):
+            agent.knowledge.load()
+            st.sidebar.success("Knowledge loaded!")
 
 
 def about_widget() -> None:

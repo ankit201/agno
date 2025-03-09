@@ -103,7 +103,7 @@ async def main() -> None:
     ####################################################################
     # Generate response for user message
     ####################################################################
-    process_last_message(mcp_agent)
+    await process_last_message(mcp_agent)
 
     ####################################################################
     # Session selector
@@ -119,7 +119,7 @@ async def main() -> None:
     ####################################################################
     # About section
     ####################################################################
-    utilities_widget()
+    utilities_widget(agent=mcp_agent)
     about_widget()
 
 
@@ -156,7 +156,7 @@ def display_agent_messages() -> None:
                     st.markdown(_content)
 
 
-def process_last_message(mcp_agent: Agent) -> None:
+async def process_last_message(mcp_agent: Agent) -> None:
     """Process the last user message and generate a response."""
     last_message = (
         st.session_state["messages"][-1] if st.session_state["messages"] else None
@@ -171,8 +171,8 @@ def process_last_message(mcp_agent: Agent) -> None:
                 response = ""
                 try:
                     # Run the agent and stream the response
-                    run_response = mcp_agent.run(question, stream=True)
-                    for _resp_chunk in run_response:
+                    run_response = await mcp_agent.arun(question, stream=True)
+                    async for _resp_chunk in run_response:
                         # Display tool calls if available
                         if _resp_chunk.tools and len(_resp_chunk.tools) > 0:
                             display_tool_calls(tool_calls_container, _resp_chunk.tools)

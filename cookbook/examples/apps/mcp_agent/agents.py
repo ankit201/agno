@@ -16,10 +16,7 @@ from agno.vectordb.lancedb import LanceDb, SearchType
 # ************* Setup Paths *************
 # Define the current working directory
 cwd = Path(__file__).parent
-# Create an output directory for saving files
-output_dir = cwd.joinpath("output")
-output_dir.mkdir(parents=True, exist_ok=True)
-# Create a tmp directory for storing agent sessions
+# Create a tmp directory for storing agent sessions and knowledge
 tmp_dir = cwd.joinpath("tmp")
 tmp_dir.mkdir(parents=True, exist_ok=True)
 # *************************************
@@ -30,6 +27,9 @@ agent_storage = SqliteAgentStorage(
     table_name="mcp_agent_sessions",  # Table to store agent sessions
     db_file=str(tmp_dir.joinpath("agents.db")),  # SQLite database file
 )
+# *************************************
+
+# ************* Agent Knowledge *************
 # Store MCP Documentation in a knowledge base
 agent_knowledge = UrlKnowledge(
     urls=["https://modelcontextprotocol.io/llms-full.txt"],
@@ -76,10 +76,12 @@ def get_mcp_agent(
     """)
 
     if server_ids:
-        description += dedent("""\
+        description += dedent(
+            """\n
             You have access to the following MCP servers:
-            - {server_ids}
-        """)
+            {server_ids}
+        """.format(server_ids="\n".join([f"- {server_id}" for server_id in server_ids]))
+        )
 
     instructions = dedent("""\
         Here's how you should fulfill a user request:
