@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import streamlit as st
@@ -6,15 +7,7 @@ from agents import get_mcp_agent
 from agno.agent import Agent
 from agno.tools.mcp import MCPTools
 from agno.utils.log import logger
-from pydantic import BaseModel
-
-
-class MCPServerConfig(BaseModel):
-    """Configuration for an MCP server."""
-
-    id: str
-    command: str
-    args: Optional[List[str]] = None
+from mcp_client import MCPServerConfig
 
 
 def get_selected_model() -> str:
@@ -74,7 +67,7 @@ def get_mcp_server_config() -> Optional[MCPServerConfig]:
         # Use radio button for single selection
         selected_tool = st.radio(
             "Select a tool to use:",
-            options=["GitHub"],
+            options=["GitHub", "Filesystem"],
             key="selected_mcp_tool",
             label_visibility="collapsed",
         )
@@ -97,6 +90,18 @@ def get_mcp_server_config() -> Optional[MCPServerConfig]:
                 )
             else:
                 st.error("GitHub Token is required to use GitHub MCP Tools")
+
+        elif selected_tool == "Filesystem":
+            # Get the repository root
+            cwd = Path(__file__).parent
+            repo_root = cwd.parent.parent.parent.parent.resolve()
+            st.info(f"Repository path: {repo_root}")
+            return MCPServerConfig(
+                id="filesystem",
+                command="npx",
+                args=["-y", "@modelcontextprotocol/server-filesystem"]
+                + [str(repo_root)],
+            )
 
     return None
 
@@ -133,12 +138,13 @@ def display_tool_calls(tool_calls_container, tools):
                 metrics = tool_call.get("metrics", {})
 
                 # Add timing information
-                execution_time = metrics.time
-                execution_time_str = (
-                    f"{execution_time:.2f}s"
-                    if isinstance(execution_time, (int, float))
-                    else "N/A"
-                )
+                execution_time_str = "N/A"
+                if metrics and isinstance(metrics, dict):
+                    execution_time = metrics.get("time")
+                    if execution_time is None:
+                        execution_time_str = "N/A"
+                    else:
+                        execution_time_str = f"{execution_time:.2f}s"
 
                 with st.expander(
                     f"🛠️ {tool_name.replace('_', ' ').title()} ({execution_time_str})",
@@ -174,7 +180,7 @@ def display_tool_calls(tool_calls_container, tools):
         tool_calls_container.error(f"Failed to display tool results: {str(e)}")
 
 
-def example_inputs() -> None:
+def example_inputs(server_id: str) -> None:
     """Show example inputs for the MCP Agent."""
     with st.sidebar:
         st.markdown("#### :thinking_face: Try me!")
@@ -188,11 +194,41 @@ def example_inputs() -> None:
                 "user",
                 "What is your purpose?",
             )
-        if st.button("Tell me about Agno"):
+        # Common examples for all server types
+        if st.button("What can you help me with?"):
             add_message(
                 "user",
-                "Tell me about Agno. Github repo: https://github.com/agno-agi/agno. You can read the README for more information.",
+                "What can you help me with?",
             )
+        if st.button("How do MCP tools work?"):
+            add_message(
+                "user",
+                "How do MCP tools work? Explain the Model Context Protocol.",
+            )
+
+        # Server-specific examples
+        if server_id == "github":
+            if st.button("Tell me about Agno"):
+                add_message(
+                    "user",
+                    "Tell me about Agno. Github repo: https://github.com/agno-agi/agno. You can read the README for more information.",
+                )
+            if st.button("Find issues in the Agno repo"):
+                add_message(
+                    "user",
+                    "Find open issues in the agno-agi/agno repository and summarize the top 3 most recent ones.",
+                )
+        elif server_id == "filesystem":
+            if st.button("Tell me about the current directory"):
+                add_message(
+                    "user",
+                    "Tell me about the current directory.",
+                )
+            if st.button("Find Python files"):
+                add_message(
+                    "user",
+                    "Find all Python files in the current directory and summarize what they do.",
+                )
 
 
 def session_selector_widget(
