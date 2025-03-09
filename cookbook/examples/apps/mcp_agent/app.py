@@ -14,8 +14,6 @@ from utils import (
     utilities_widget,
 )
 
-from cookbook.examples.apps.mcp_agent.mcp_manager_2 import initialize_mcp_tools
-
 nest_asyncio.apply()
 
 apply_theme()
@@ -93,15 +91,20 @@ def main() -> None:
     load_agent_runs(mcp_agent)
 
     ####################################################################
+    # Get user input
+    ####################################################################
+    if prompt := st.chat_input("✨ How can I help, bestie?"):
+        add_message("user", prompt)
+
+    ####################################################################
     # Show example inputs
     ####################################################################
     example_inputs()
 
     ####################################################################
-    # Get user input
+    # Display agent messages
     ####################################################################
-    if prompt := st.chat_input("✨ How can I help, bestie?"):
-        add_message("user", prompt)
+    display_agent_messages()
 
     ####################################################################
     # Generate response for user message
@@ -139,7 +142,9 @@ def load_agent_runs(mcp_agent: Agent) -> None:
         logger.debug("No run history found")
         st.session_state["messages"] = []
 
-    # Display the agent messages
+
+def display_agent_messages() -> None:
+    """Display previous messages."""
     for message in st.session_state["messages"]:
         if message["role"] in ["user", "assistant"]:
             _content = message["content"]
