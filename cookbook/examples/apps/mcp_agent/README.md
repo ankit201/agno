@@ -1,7 +1,6 @@
 # UAgI: Universal Agent Interface powered by MCP
 
-> [!IMPORTANT]
-> This is a work in progress and not all MCP servers are supported yet.
+> [!IMPORTANT] This is a work in progress (see issues below), please contribute and help improve.
 
 UAgI (Universal Agent Interface) is a powerful agent application that leverages the Model Context Protocol (MCP) to provide a unified interface for interacting with various MCP servers. This application allows you to connect to different data sources and tools through MCP servers, providing a seamless experience for working with external services.
 
