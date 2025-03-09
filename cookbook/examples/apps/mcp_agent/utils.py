@@ -1,23 +1,20 @@
 import os
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 
 import streamlit as st
 from agents import get_mcp_agent
 from agno.agent import Agent
 from agno.tools.mcp import MCPTools
 from agno.utils.log import logger
-from mcp_manager import MCPManager
+from pydantic import BaseModel
 
 
-@st.cache_resource()
-def get_mcp_manager(server_ids: Tuple[str]) -> MCPManager:
-    """Get the MCPManager instance.
+class MCPServerConfig(BaseModel):
+    """Configuration for an MCP server."""
 
-    This function is cached using st.cache_resource to avoid recreating
-    the MCPManager instance on each rerun.
-    """
-    # Use synchronous creation instead of async
-    return MCPManager.create_sync(list(server_ids))
+    id: str
+    command: str
+    args: Optional[List[str]] = None
 
 
 def get_selected_model() -> str:
@@ -65,17 +62,24 @@ def get_num_history_responses() -> int:
     return num_history
 
 
-def get_mcp_tools_list() -> Union[List[MCPTools], List[str]]:
-    """Get a list of MCPTools and instructions for the Agent.
+def get_mcp_server_config() -> Optional[MCPServerConfig]:
+    """Get a single MCP server config to add to the agent.
 
     Returns:
-        Union[List[MCPTools], List[str]]: A list of MCPTools or a list of server IDs.
+        Optional[MCPServerConfig]: A single MCP server config, or None if none selected.
     """
-    mcp_server_ids = []
     with st.sidebar:
-        st.markdown("#### 🛠️ Select MCP Tools")
-        add_github_mcp_tools = st.checkbox("GitHub", key="github_mcp_tools")
-        if add_github_mcp_tools:
+        st.markdown("#### 🛠️ Select MCP Tool")
+
+        # Use radio button for single selection
+        selected_tool = st.radio(
+            "Select a tool to use:",
+            options=["GitHub"],
+            key="selected_mcp_tool",
+            label_visibility="collapsed",
+        )
+
+        if selected_tool == "GitHub":
             github_token_from_env = os.getenv("GITHUB_TOKEN")
             github_token = st.text_input(
                 "GitHub Token",
@@ -85,15 +89,16 @@ def get_mcp_tools_list() -> Union[List[MCPTools], List[str]]:
             )
             if github_token:
                 os.environ["GITHUB_TOKEN"] = github_token
-                mcp_server_ids.append("github")
+                return MCPServerConfig(
+                    id="github",
+                    command="npx",
+                    args=["-y", "@modelcontextprotocol/server-github"],
+                    env_vars=["GITHUB_TOKEN"],
+                )
             else:
                 st.error("GitHub Token is required to use GitHub MCP Tools")
 
-    # Get tools from the MCPManager
-    mcp_manager = get_mcp_manager(tuple(mcp_server_ids))
-    mcp_tools_list = mcp_manager.get_mcp_tools_list()
-
-    return mcp_tools_list, mcp_server_ids
+    return None
 
 
 def add_message(
@@ -194,7 +199,7 @@ def session_selector_widget(
     agent: Agent,
     model_str: str,
     num_history_responses: int,
-    mcp_tools_list: List[MCPTools],
+    mcp_tools: List[MCPTools],
     mcp_server_ids: List[str],
 ) -> None:
     """Display a session selector in the sidebar, if a new session is selected, the agent is restarted with the new session."""
@@ -243,8 +248,8 @@ def session_selector_widget(
                 model_str=model_str,
                 session_id=selected_session_id,
                 num_history_responses=num_history_responses,
-                mcp_tools_list=mcp_tools_list,
-                server_ids=mcp_server_ids,
+                mcp_tools=mcp_tools,
+                mcp_server_ids=mcp_server_ids,
             )
             st.rerun()
 

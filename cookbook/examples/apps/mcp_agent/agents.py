@@ -48,8 +48,8 @@ def get_mcp_agent(
     model_str: str = "openai:gpt-4o",
     session_id: Optional[str] = None,
     num_history_responses: int = 5,
-    mcp_tools_list: Optional[List[MCPTools]] = None,
-    server_ids: Optional[List[str]] = None,
+    mcp_tools: Optional[List[MCPTools]] = None,
+    mcp_server_ids: Optional[List[str]] = None,
     debug_mode: bool = True,
 ) -> Agent:
     model = get_model_for_provider(model_str)
@@ -75,12 +75,12 @@ def get_mcp_agent(
         </critical>\
     """)
 
-    if server_ids:
+    if mcp_server_ids:
         description += dedent(
             """\n
             You have access to the following MCP servers:
-            {server_ids}
-        """.format(server_ids="\n".join([f"- {server_id}" for server_id in server_ids]))
+            {}
+        """.format("\n".join([f"- {server_id}" for server_id in mcp_server_ids]))
         )
 
     instructions = dedent("""\
@@ -117,7 +117,7 @@ def get_mcp_agent(
         model=model,
         user_id=user_id,
         session_id=session_id,
-        tools=mcp_tools_list,
+        tools=mcp_tools,
         # Store Agent sessions in the database
         storage=agent_storage,
         # Store MCP Documentation in a knowledge base
