@@ -1,15 +1,17 @@
+import asyncio
+
 import nest_asyncio
 import streamlit as st
 from agents import get_mcp_agent
 from agno.agent import Agent
 from agno.utils.log import logger
-from mcp_manager import MCPManager
 from utils import (
     about_widget,
     add_message,
     apply_theme,
     display_tool_calls,
     example_inputs,
+    get_mcp_tools_and_instructions,
     get_selected_model,
     session_selector_widget,
     utilities_widget,
@@ -19,7 +21,7 @@ nest_asyncio.apply()
 apply_theme()
 
 
-def main() -> None:
+async def main() -> None:
     ####################################################################
     # App header
     ####################################################################
@@ -35,6 +37,7 @@ def main() -> None:
     # Settings
     ####################################################################
     selected_model = get_selected_model()
+    mcp_tools_list, mcp_instructions = await get_mcp_tools_and_instructions()
 
     ####################################################################
     # Initialize Agent
@@ -172,4 +175,4 @@ def process_last_message(mcp_agent: Agent) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

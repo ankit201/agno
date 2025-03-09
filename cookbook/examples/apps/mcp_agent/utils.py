@@ -1,9 +1,23 @@
-from typing import Any, Dict, List, Optional
+import os
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import streamlit as st
 from agents import get_mcp_agent
-from agno.agent.agent import Agent
+from agno.agent import Agent
+from agno.tools.mcp import MCPTools
 from agno.utils.log import logger
+from mcp_manager import MCPManager, MCPServerConfig
+
+
+@st.cache_resource()
+def get_mcp_manager(server_configs: Tuple[MCPServerConfig]) -> MCPManager:
+    """Get the MCPManager instance.
+
+    This function is cached using st.cache_resource to avoid recreating
+    the MCPManager instance on each rerun.
+    """
+    # Use synchronous creation instead of async
+    return MCPManager.create_sync(list(server_configs))
 
 
 def get_selected_model() -> str:
@@ -32,6 +46,47 @@ def get_selected_model() -> str:
         label_visibility="collapsed",
     )
     return model_options[selected_model]
+
+
+async def get_mcp_tools_and_instructions() -> Tuple[List[MCPTools], Optional[str]]:
+    """Get a list of MCPTools and instructions for the Agent.
+
+    Returns:
+        Tuple[List[MCPTools], Optional[str]]: A tuple containing a list of MCPTools and instructions for using them.
+    """
+    mcp_tools = []
+    mcp_instructions = None
+    mcp_server_configs = []
+
+    with st.sidebar:
+        st.markdown("#### 🛠️ Select MCP Tools")
+        add_github_mcp_tools = st.checkbox("GitHub", key="github_mcp_tools")
+        if add_github_mcp_tools:
+            github_token_from_env = os.getenv("GITHUB_TOKEN")
+            github_token = st.text_input(
+                "GitHub Token",
+                type="password",
+                help="Create a token with repo scope at github.com/settings/tokens",
+                value=github_token_from_env,
+            )
+            if github_token:
+                os.environ["GITHUB_TOKEN"] = github_token
+                mcp_server_configs.append(
+                    MCPServerConfig(
+                        id="github",
+                        command="npx",
+                        args=["-y", "@modelcontextprotocol/server-github"],
+                        env_vars=["GITHUB_TOKEN"],
+                    )
+                )
+            else:
+                st.error("GitHub Token is required to use GitHub MCP Tools")
+
+    # Get manager without awaiting
+    mcp_manager = get_mcp_manager(tuple(mcp_server_configs))
+    mcp_tools_list = mcp_manager.get_mcp_tools_list()
+
+    return mcp_tools_list, mcp_instructions
 
 
 def add_message(
