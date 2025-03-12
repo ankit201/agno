@@ -67,7 +67,7 @@ class WorkspaceSettings(BaseSettings):
     # Profile for AWS resources
     aws_profile: Optional[str] = None
     # AWS Subnet Ids
-    aws_subnet_ids: Optional[str] = None
+    aws_subnet_ids: List[str] = Field(default_factory=list)
     # Public subnets. 1 in each AZ.
     aws_public_subnets: List[str] = Field(default_factory=list)
     # Private subnets. 1 in each AZ.
@@ -134,7 +134,7 @@ class WorkspaceSettings(BaseSettings):
 
         return f"{prd_env}-{ws_name}"
 
-    @field_validator("subnet_ids", mode="before")
+    @field_validator("aws_subnet_ids", mode="before")
     def set_subnet_ids(cls, aws_subnet_ids, info: ValidationInfo):
         if aws_subnet_ids is not None:
             return aws_subnet_ids
