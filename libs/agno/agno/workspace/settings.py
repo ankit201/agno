@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
+from pydantic import Field, ValidationInfo, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from agno.api.schemas.workspace import WorkspaceSchema
@@ -36,6 +37,18 @@ class WorkspaceSettings(BaseSettings):
     # Force pull images in FROM
     force_pull_images: bool = False
 
+    # Development Settings
+    dev_env: str = "dev"
+    dev_key: Optional[str] = None
+
+    # Staging Settings
+    stg_env: str = "stg"
+    stg_key: Optional[str] = None
+
+    # Production Settings
+    prd_env: str = "prd"
+    prd_key: Optional[str] = None
+
     # ag cli settings
     # Set to True if Agno should continue creating
     # resources after a resource creation has failed
@@ -53,6 +66,20 @@ class WorkspaceSettings(BaseSettings):
     aws_region: Optional[str] = None
     # Profile for AWS resources
     aws_profile: Optional[str] = None
+    # AWS Subnet Ids
+    aws_subnet_ids: Optional[str] = None
+    # Public subnets. 1 in each AZ.
+    aws_public_subnets: List[str] = Field(default_factory=list)
+    # Private subnets. 1 in each AZ.
+    aws_private_subnets: List[str] = Field(default_factory=list)
+    # AWS Availability Zone
+    aws_az1: Optional[str] = None
+    aws_az2: Optional[str] = None
+    aws_az3: Optional[str] = None
+    aws_az4: Optional[str] = None
+    aws_az5: Optional[str] = None
+    # Security Group Ids
+    aws_security_group_ids: List[str] = Field(default_factory=list)
 
     # Other Settings
     # Use cached resource if available, i.e. skip resource creation if the resource already exists
@@ -61,3 +88,58 @@ class WorkspaceSettings(BaseSettings):
     ws_schema: Optional[WorkspaceSchema] = None
 
     model_config = SettingsConfigDict(extra="allow")
+
+    @field_validator("dev_key", mode="before")
+    def set_dev_key(cls, dev_key, info: ValidationInfo):
+        if dev_key is not None:
+            return dev_key
+
+        ws_name = info.data.get("ws_name")
+        if ws_name is None:
+            raise ValueError("ws_name invalid")
+
+        dev_env = info.data.get("dev_env")
+        if dev_env is None:
+            raise ValueError("dev_env invalid")
+
+        return f"{dev_env}-{ws_name}"
+
+    @field_validator("stg_key", mode="before")
+    def set_stg_key(cls, stg_key, info: ValidationInfo):
+        if stg_key is not None:
+            return stg_key
+
+        ws_name = info.data.get("ws_name")
+        if ws_name is None:
+            raise ValueError("ws_name invalid")
+
+        stg_env = info.data.get("stg_env")
+        if stg_env is None:
+            raise ValueError("stg_env invalid")
+
+        return f"{stg_env}-{ws_name}"
+
+    @field_validator("prd_key", mode="before")
+    def set_prd_key(cls, prd_key, info: ValidationInfo):
+        if prd_key is not None:
+            return prd_key
+
+        ws_name = info.data.get("ws_name")
+        if ws_name is None:
+            raise ValueError("ws_name invalid")
+
+        prd_env = info.data.get("prd_env")
+        if prd_env is None:
+            raise ValueError("prd_env invalid")
+
+        return f"{prd_env}-{ws_name}"
+
+    @field_validator("subnet_ids", mode="before")
+    def set_subnet_ids(cls, aws_subnet_ids, info: ValidationInfo):
+        if aws_subnet_ids is not None:
+            return aws_subnet_ids
+
+        aws_public_subnets = info.data.get("aws_public_subnets", [])
+        aws_private_subnets = info.data.get("aws_private_subnets", [])
+
+        return aws_public_subnets + aws_private_subnets
