@@ -12,7 +12,7 @@ from agno.api.schemas.workspace import WorkspaceSchema
 class WorkspaceSettings(BaseSettings):
     """Workspace settings that can be used by any resource in the workspace."""
 
-    # Workspace name: only used for naming cloud resources
+    # Workspace name
     ws_name: str
     # Path to the workspace root
     ws_root: Path
