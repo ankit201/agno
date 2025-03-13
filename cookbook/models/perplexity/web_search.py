@@ -8,4 +8,4 @@ agent = Agent(model=Perplexity(id="sonar-pro"), markdown=True)
 # print(run.content)
 
 # Print the response in the terminal
-agent.print_response("What is happening in the world today?")
+agent.print_response("Show me top 2 news stories from USA?")
