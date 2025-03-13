@@ -96,11 +96,11 @@ class WorkspaceSettings(BaseSettings):
 
         ws_name = info.data.get("ws_name")
         if ws_name is None:
-            raise ValueError("ws_name invalid")
+            raise ValueError("ws_name is None: Please set a valid value")
 
         dev_env = info.data.get("dev_env")
         if dev_env is None:
-            raise ValueError("dev_env invalid")
+            raise ValueError("dev_env is None: Please set a valid value")
 
         return f"{dev_env}-{ws_name}"
 
@@ -111,11 +111,11 @@ class WorkspaceSettings(BaseSettings):
 
         ws_name = info.data.get("ws_name")
         if ws_name is None:
-            raise ValueError("ws_name invalid")
+            raise ValueError("ws_name is None: Please set a valid value")
 
         stg_env = info.data.get("stg_env")
         if stg_env is None:
-            raise ValueError("stg_env invalid")
+            raise ValueError("stg_env is None: Please set a valid value")
 
         return f"{stg_env}-{ws_name}"
 
@@ -126,11 +126,11 @@ class WorkspaceSettings(BaseSettings):
 
         ws_name = info.data.get("ws_name")
         if ws_name is None:
-            raise ValueError("ws_name invalid")
+            raise ValueError("ws_name is None: Please set a valid value")
 
         prd_env = info.data.get("prd_env")
         if prd_env is None:
-            raise ValueError("prd_env invalid")
+            raise ValueError("prd_env is None: Please set a valid value")
 
         return f"{prd_env}-{ws_name}"
 
