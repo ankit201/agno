@@ -1452,7 +1452,7 @@ class Agent:
             audio=self.run_response.audio,
             images=self.run_response.images,
             videos=self.run_response.videos,
-            citations=self.run_response.citations,
+            citations=citations or self.run_response.citations,
             response_audio=self.run_response.response_audio,
             model=self.run_response.model,
             messages=self.run_response.messages,
