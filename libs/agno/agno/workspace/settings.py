@@ -26,15 +26,15 @@ class WorkspaceSettings(BaseSettings):
     # Image Settings
     # Repository for images
     image_repo: str = "agnohq"
-    # 'Name:tag' for the image
+    # 'name:tag' for the image
     image_name: Optional[str] = None
-    # Build images locally
+    # If True, build images locally
     build_images: bool = False
-    # Push images after building
+    # If True, push images after building
     push_images: bool = False
-    # Skip cache when building images
+    # If True, skip cache when building images
     skip_image_cache: bool = False
-    # Force pull images in FROM
+    # If True, force pull images in FROM
     force_pull_images: bool = False
 
     # Development Settings
@@ -68,9 +68,11 @@ class WorkspaceSettings(BaseSettings):
     aws_profile: Optional[str] = None
     # AWS Subnet Ids
     aws_subnet_ids: List[str] = Field(default_factory=list)
-    # Public subnets. 1 in each AZ.
+    # Public subnets. Will be added to aws_subnet_ids if provided and aws_subnet_ids is empty.
+    # Note: not added to aws_subnet_ids if aws_subnet_ids is provided.
     aws_public_subnets: List[str] = Field(default_factory=list)
-    # Private subnets. 1 in each AZ.
+    # Private subnets. Will be added to aws_subnet_ids if provided and aws_subnet_ids is empty.
+    # Note: not added to aws_subnet_ids if aws_subnet_ids is provided.
     aws_private_subnets: List[str] = Field(default_factory=list)
     # AWS Availability Zone
     aws_az1: Optional[str] = None
@@ -93,46 +95,40 @@ class WorkspaceSettings(BaseSettings):
     def set_dev_key(cls, dev_key, info: ValidationInfo):
         if dev_key is not None:
             return dev_key
-
         ws_name = info.data.get("ws_name")
         if ws_name is None:
-            raise ValueError("ws_name is None: Please set a valid value")
-
+            raise ValueError("`ws_name` is None: Please set a valid value")
         dev_env = info.data.get("dev_env")
         if dev_env is None:
-            raise ValueError("dev_env is None: Please set a valid value")
+            raise ValueError("`dev_env` is None: Please set a valid value")
 
-        return f"{dev_env}-{ws_name}"
+        return f"{ws_name}-{dev_env}"
 
     @field_validator("stg_key", mode="before")
     def set_stg_key(cls, stg_key, info: ValidationInfo):
         if stg_key is not None:
             return stg_key
-
         ws_name = info.data.get("ws_name")
         if ws_name is None:
-            raise ValueError("ws_name is None: Please set a valid value")
-
+            raise ValueError("`ws_name` is None: Please set a valid value")
         stg_env = info.data.get("stg_env")
         if stg_env is None:
-            raise ValueError("stg_env is None: Please set a valid value")
+            raise ValueError("`stg_env` is None: Please set a valid value")
 
-        return f"{stg_env}-{ws_name}"
+        return f"{ws_name}-{stg_env}"
 
     @field_validator("prd_key", mode="before")
     def set_prd_key(cls, prd_key, info: ValidationInfo):
         if prd_key is not None:
             return prd_key
-
         ws_name = info.data.get("ws_name")
         if ws_name is None:
-            raise ValueError("ws_name is None: Please set a valid value")
-
+            raise ValueError("`ws_name` is None: Please set a valid value")
         prd_env = info.data.get("prd_env")
         if prd_env is None:
-            raise ValueError("prd_env is None: Please set a valid value")
+            raise ValueError("`prd_env` is None: Please set a valid value")
 
-        return f"{prd_env}-{ws_name}"
+        return f"{ws_name}-{prd_env}"
 
     @field_validator("aws_subnet_ids", mode="before")
     def set_subnet_ids(cls, aws_subnet_ids, info: ValidationInfo):
