@@ -17,9 +17,9 @@
 
 **[Agno](https://docs.agno.com) is a lightweight library for building Multimodal Agents.**
 
-- **Build lightning-fast Agents that take any modality as input** (text, image, audio and video) **and generate any modality as output** (text, image, audio and video)**.**
-- **Add memory, knowledge, tools and reasoning as needed.**
-- **Run anywhere** (AWS, GCP, Azure, Replit, Modal), **Agno is open-source.**
+- Build lightning-fast Agents that take any modality as input (text, image, audio and video) and generate any modality as output (text, image, audio and video).
+- Add memory, knowledge, tools and reasoning as needed.
+- Run anywhere (AWS, GCP, Azure, Replit, Modal), Agno is open-source.
 
 **Instead of wrapping LLMs, Agno exposes LLMs as a unified API and gives them superpowers.** Here's an Agent that can search the web:
 
