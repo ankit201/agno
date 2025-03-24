@@ -15,13 +15,13 @@
 
 ## Introduction
 
-**[Agno](https://docs.agno.com) is a lightweight library for building Multimodal Agents.**
+[Agno](https://docs.agno.com) is a lightweight library for building Multimodal Agents. It exposes LLMs as a unified API and gives them superpowers like memory, knowledge, tools and reasoning.
 
-- Build lightning-fast Agents that take any modality as input (text, image, audio and video) and generate any modality as output (text, image, audio and video).
+- Build lightning-fast Agents that can generate text, image, audio and video.
 - Add memory, knowledge, tools and reasoning as needed.
-- Run anywhere (AWS, GCP, Azure, Replit, Modal), Agno is open-source.
+- Run anywhere, Agno is open-source.
 
-**Instead of wrapping LLMs, Agno exposes LLMs as a unified API and gives them superpowers.** Here's an Agent that can search the web:
+Here's an Agent that can search the web:
 
 ```python websearch_agent.py
 from agno.agent import Agent
@@ -48,6 +48,12 @@ Agno is simple, fast and model agnostic. Here are some key features:
 - **Knowledge Stores**: Use vector databases for RAG or dynamic few-shot learning.
 - **Structured Outputs**: Make Agents respond in a structured format.
 - **Monitoring**: Track agent sessions and performance in real-time on [agno.com](https://app.agno.com).
+
+## Getting Started
+
+- Start by [building your first Agent](https://docs.agno.com/introduction/agents).
+- Read the [documentation](https://docs.agno.com)
+- Check out the [examples](https://docs.agno.com/examples/introduction)
 
 ## Installation
 
