@@ -49,18 +49,6 @@ Agno is simple, fast and model agnostic. Here are some key features:
 - **Structured Outputs**: Make Agents respond in a structured format.
 - **Monitoring**: Track agent sessions and performance in real-time on [agno.com](https://app.agno.com).
 
-## What are Agents?
-
-**Agents** are intelligent programs that solve problems autonomously.
-
-Agents have memory, domain knowledge and the ability to use tools (like searching the web, querying a database, making API calls). Unlike traditional programs that follow a predefined execution path, Agents dynamically adapt their approach based on the context and tool results.
-
-Instead of a rigid binary definition, let's think of Agents in terms of agency and autonomy.
-- **Level 0**: Agents with no tools (basic inference tasks).
-- **Level 1**: Agents with tools for autonomous task execution.
-- **Level 2**: Agents with knowledge, combining memory and reasoning.
-- **Level 3**: Teams of specialized agents collaborating on complex workflows.
-
 ## Getting Started
 
 - Start by [building your first Agent](https://docs.agno.com/introduction/agents)
@@ -72,6 +60,18 @@ Instead of a rigid binary definition, let's think of Agents in terms of agency a
 ```shell
 pip install -U agno
 ```
+
+## What are Agents?
+
+**Agents** are intelligent programs that solve problems autonomously.
+
+Agents have memory, domain knowledge and the ability to use tools (like searching the web, querying a database, making API calls). Unlike traditional programs that follow a predefined execution path, Agents dynamically adapt their approach based on the context and tool results.
+
+Instead of a rigid binary definition, let's think of Agents in terms of agency and autonomy.
+- **Level 0**: Agents with no tools (basic inference tasks).
+- **Level 1**: Agents with tools for autonomous task execution.
+- **Level 2**: Agents with knowledge, combining memory and reasoning.
+- **Level 3**: Teams of specialized agents collaborating on complex workflows.
 
 ## Example - Basic Agent
 
