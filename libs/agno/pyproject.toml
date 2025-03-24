@@ -241,6 +241,7 @@ module = [
   "email_validator.*",
   "exa_py.*",
   "fastapi.*",
+  "filetype.*",
   "firecrawl.*",
   "github.*",
   "google.*",
