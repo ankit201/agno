@@ -126,6 +126,7 @@ async def run_team():
             instructions=dedent("""\
                 You are an agent that can find flight deals for a given location and date.
                 Visit `https://www.google.com/flights` and find the best flight deals for a given location and date.
+                Make sure to include the best flight deals in your response.
             """),
             add_datetime_to_instructions=True,
         )
