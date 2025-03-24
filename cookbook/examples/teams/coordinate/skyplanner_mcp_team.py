@@ -192,12 +192,6 @@ async def run_team():
             Make sure to include the best attractions, restaurants, and activities.
             Make sure to include the best flight deals.
             Make sure to include the best Airbnb listings.
-            Make sure to include the weather information.
-            Make sure to include the best points of interest.
-            Make sure to include the best restaurants.
-            Make sure to include the best activities.
-            Make sure to include the best flight deals.
-            Make sure to include the best Airbnb listings.
             Make sure to include the weather information.\
         """)
         )

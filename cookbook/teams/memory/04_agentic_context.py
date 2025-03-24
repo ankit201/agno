@@ -60,7 +60,10 @@ team = Team(
 
 
 # -*- Share personal information
-team.print_response("First find the stock price of apple.Then find any information about the company.", stream=True)
+team.print_response(
+    "First find the stock price of apple.Then find any information about the company.",
+    stream=True,
+)
 
 team.print_response("What is the price of google stock?", stream=True)
 
