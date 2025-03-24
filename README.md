@@ -51,9 +51,9 @@ Agno is simple, fast and model agnostic. Here are some key features:
 
 ## Getting Started
 
-- Start by [building your first Agent](https://docs.agno.com/introduction/agents).
-- Read the [documentation](https://docs.agno.com)
+- Start by [building your first Agent](https://docs.agno.com/introduction/agents)
 - Check out the [examples](https://docs.agno.com/examples/introduction)
+- Read the [documentation](https://docs.agno.com)
 
 ## Installation
 
@@ -63,7 +63,9 @@ pip install -U agno
 
 ## What are Agents?
 
-**Agents** are intelligent programs that solve problems autonomously. Unlike traditional programs that follow a predefined execution path, agents have memory, domain knowledge and tools and dynamically adapt their approach based on context and tool results.
+**Agents** are intelligent programs that solve problems autonomously.
+
+Agents have memory, domain knowledge and the ability to use tools (like searching the web, querying a database, making API calls). Unlike traditional programs that follow a predefined execution path, Agents dynamically adapt their approach based on the context and tool results.
 
 Instead of a rigid binary definition, let's think of Agents in terms of agency and autonomy.
 - **Level 0**: Agents with no tools (basic inference tasks).
