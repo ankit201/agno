@@ -36,7 +36,10 @@ async def run_agent(message: str) -> None:
         command="npx", args=["-y", "@modelcontextprotocol/server-google-maps"], env=env
     )
 
-    async with MCPTools(server_params=time_server_params) as time_mcp_tools, MCPTools(server_params=maps_server_params) as maps_mcp_tools:
+    async with (
+        MCPTools(server_params=time_server_params) as time_mcp_tools,
+        MCPTools(server_params=maps_server_params) as maps_mcp_tools,
+    ):
         agent = Agent(
             tools=[time_mcp_tools, maps_mcp_tools],
             markdown=True,
