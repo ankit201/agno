@@ -36,6 +36,29 @@ agent = Agent(
 agent.print_response("What's happening in New York?", stream=True)
 ```
 
+## 🚨 Introducing the Global Agent Hackathon! 🚨
+
+To celebrate our [General Availability](https://x.com/ashpreetbedi/status/1905311368510931106), we are running a Global Agent Hackathon!
+
+### Win up to $20,000 in cash by building Agents
+
+- 🏅 10 winners: $300 each
+- 🥉 10 winners: $500 each
+- 🥈 5 winners: $1,000 each
+- 🥇 1 winner: $2,000
+- 🏆 GRAND PRIZE: $5,000 🏆
+
+Star the repo and follow us on [X](https://x.com/AgnoAgi) to stay updated. Prizes will be distributed on an ongoing basis and continue till all prizes are awarded.
+
+### Here's the timeline:
+
+- April 3rd - Final dates revealed
+- April 10th - Prize and success criteria finalized
+- April 15th (tentative) - Hackathon starts
+- May 30th (tentative) - Hackathon ends
+
+Join us for a month of building Agents!
+
 ## Key features
 
 Agno is simple, fast and model agnostic. Here are some key features:
