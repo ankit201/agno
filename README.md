@@ -53,7 +53,7 @@ Star this repo and follow along to stay updated.
 ### Here's the timeline:
 
 - April 3rd - Final dates revealed
-- April 10th - Prize and success criteria finalized
+- April 10th - Prize and success criteria announced
 - April 15th (tentative) - Hackathon starts
 - May 30th (tentative) - Hackathon ends
 
