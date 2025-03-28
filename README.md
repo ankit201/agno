@@ -48,7 +48,7 @@ To celebrate our [General Availability](https://x.com/ashpreetbedi/status/190531
 - 🥇 1 winner: $2,000
 - 🏆 GRAND PRIZE: $5,000 🏆
 
-Star the repo and follow us on [X](https://x.com/AgnoAgi) to stay updated. Prizes will be distributed on an ongoing basis and continue till all prizes are awarded.
+Star the repo and follow us on [X](https://x.com/AgnoAgi) to stay updated.
 
 ### Here's the timeline:
 
@@ -57,7 +57,7 @@ Star the repo and follow us on [X](https://x.com/AgnoAgi) to stay updated. Prize
 - April 15th (tentative) - Hackathon starts
 - May 30th (tentative) - Hackathon ends
 
-Join us for a month of building Agents!
+Join us for a month of building Agents! Prizes will be distributed on an ongoing basis and continue till all prizes are awarded.
 
 ## Key features
 
