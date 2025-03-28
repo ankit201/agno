@@ -48,7 +48,7 @@ To celebrate our [General Availability](https://x.com/ashpreetbedi/status/190531
 - 🥇 1 winner: $2,000
 - 🏆 GRAND PRIZE: $5,000 🏆
 
-Star the repo and follow us on [X](https://x.com/AgnoAgi) to stay updated.
+Star this repo and follow along to stay updated.
 
 ### Here's the timeline:
 
