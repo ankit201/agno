@@ -57,7 +57,9 @@ Star the repo and follow us on [X](https://x.com/AgnoAgi) to stay updated.
 - April 15th (tentative) - Hackathon starts
 - May 30th (tentative) - Hackathon ends
 
-Join us for a month of building Agents! Prizes will be distributed on an ongoing basis and continue till all prizes are awarded.
+Join us for a month of building Agents!
+
+> Prizes will be distributed on an ongoing basis and continue till all prizes are awarded.
 
 ## Key features
 
