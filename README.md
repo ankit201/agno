@@ -59,6 +59,10 @@ Star this repo and follow along to stay updated.
 
 Join us for a month of building Agents!
 
+### Want to join us as a sponsor or judge?
+
+We're looking for sponsors and judges for the hackathon. If you're interested in joining, please reach out to [ashpreet@agno.com](mailto:ashpreet@agno.com).
+
 > Prizes will be distributed on an ongoing basis and continue till all prizes are awarded.
 
 ## Key features
