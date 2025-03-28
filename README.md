@@ -38,7 +38,7 @@ agent.print_response("What's happening in New York?", stream=True)
 
 ## 🚨 Introducing the Global Agent Hackathon! 🚨
 
-To celebrate our [General Availability](https://x.com/ashpreetbedi/status/1905311368510931106), we are running a Global Agent Hackathon!
+To celebrate our [General Availability](https://x.com/ashpreetbedi/status/1905311368510931106), we are running a Global Agent Hackathon! Star this repo and follow along to stay updated.
 
 ### Win up to $20,000 in cash by building Agents
 
@@ -47,8 +47,6 @@ To celebrate our [General Availability](https://x.com/ashpreetbedi/status/190531
 - 🥈 5 winners: $1,000 each
 - 🥇 1 winner: $2,000
 - 🏆 GRAND PRIZE: $5,000 🏆
-
-Star this repo and follow along to stay updated.
 
 ### Here's the timeline:
 
