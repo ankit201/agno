@@ -1,6 +1,6 @@
 """Agno Assist - Your Assistant for Agno Framework!
 
-Run `pip install openai lancedb tantivy elevenlabs sqlalchemy agno` to install dependencies.
+Install dependencies: `pip install openai lancedb tantivy elevenlabs sqlalchemy agno`
 """
 
 from pathlib import Path

@@ -9,14 +9,14 @@ Each example builds on the previous one, introducing new concepts and capabiliti
 Create a virtual environment:
 
 ```bash
-python3 -m venv .venv
+uv venv --python 3.12
 source .venv/bin/activate
 ```
 
 Install the required dependencies:
 
 ```bash
-pip install openai duckduckgo-search lancedb tantivy elevenlabs sqlalchemy agno
+uv pip install openai duckduckgo-search lancedb tantivy elevenlabs sqlalchemy 'fastapi[standard]' agno
 ```
 
 Export your OpenAI API key:
