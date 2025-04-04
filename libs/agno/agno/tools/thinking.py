@@ -21,9 +21,7 @@ class ThinkingTools(Toolkit):
             **kwargs,
         )
 
-        if instructions:
-            self.instructions = instructions
-        else:
+        if not instructions:
             self.instructions = dedent("""\
             ## Using the think tool
             Before taking any action or responding to the user after receiving tool results, use the think tool as a scratchpad to:
