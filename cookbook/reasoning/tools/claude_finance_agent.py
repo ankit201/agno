@@ -14,6 +14,7 @@ thinking_agent = Agent(
             company_news=True,
         ),
     ],
+    instructions="Use tables where possible",
     show_tool_calls=True,
 )
 thinking_agent.print_response(
