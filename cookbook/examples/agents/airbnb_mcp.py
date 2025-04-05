@@ -30,6 +30,7 @@ async def run_agent(message: str) -> None:
             - Before responding to the user, use the think tool to jot down final thoughts and ideas.
             - Present final outputs in well-organized tables whenever possible.
             - Always provide links to the listings in your response.
+            - Show your top 10 recommendations in a table and make a case for why each is the best choice.
 
             ## Using the think tool
             At every step, use the think tool as a scratchpad to:
