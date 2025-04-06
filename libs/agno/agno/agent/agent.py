@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from collections import ChainMap, defaultdict, deque
 from dataclasses import asdict, dataclass
 from os import getenv
