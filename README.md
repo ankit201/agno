@@ -25,7 +25,7 @@ Here's an Agent that can search the web:
 
 ```python websearch_agent.py
 from agno.agent import Agent
-from agno.models.anthropic import Claude
+from agno.models.openai import OpenAIChat
 from agno.tools.duckduckgo import DuckDuckGoTools
 
 agent = Agent(

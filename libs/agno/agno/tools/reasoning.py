@@ -204,6 +204,7 @@ class ReasoningTools(Toolkit):
                 Also note your reasoning about whether it's correct/sufficient.
 
         **IMPORTANT:**
+        - Always complete atleast 1 `think` -> `analyze` cycle to reason through the problem.
         - Do not expose your internal chain-of-thought to the user.
         - Use the tools iteratively to build a clear reasoning path: Think -> [Tool Call] -> Analyze -> [Tool Call] -> ... -> Analyze -> Finalize.
         - Iterate through the (Think → Analyze) cycle as many times as needed until you have a satisfactory final answer.
@@ -264,6 +265,6 @@ class ReasoningTools(Toolkit):
           next_action="final_answer"
           confidence=0.9
 
-        Final Answer: The capital of France is Paris. Its estimated population is approximately 2.1 million as of early 2024.
+        Final Answer: The capital of France is Paris. Its estimated population is approximately 2.1 million as of early 2024.\
         """
     )
