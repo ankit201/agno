@@ -2,22 +2,23 @@ from textwrap import dedent
 from typing import Optional
 
 from agno.agent import Agent
-from agno.reasoning.step import NextAction, ReasoningStep, ReasoningSteps
-from agno.run.response import RunEvent
+from agno.reasoning.step import NextAction, ReasoningStep
 from agno.tools import Toolkit
-from agno.utils.log import log_debug, logger
+from agno.utils.log import log_debug, log_error
 
 
 class ReasoningTools(Toolkit):
     def __init__(
         self,
-        reason: bool = True,
+        think: bool = True,
         analyze: bool = True,
-        finalize: bool = True,
-        instructions: Optional[str] = None,
         add_instructions: bool = True,
+        add_few_shot: bool = True,
+        instructions: Optional[str] = None,
+        few_shot_examples: Optional[str] = None,
         **kwargs,
     ):
+        """A toolkit that provides step-by-step reasoning tools: Think and Analyze."""
         super().__init__(
             name="reasoning_tools",
             instructions=instructions,
@@ -25,59 +26,50 @@ class ReasoningTools(Toolkit):
             **kwargs,
         )
 
+        # Add instructions for using this toolkit
         if instructions is None:
-            self.instructions = dedent("""\
-            ## Using Reasoning Tools
-            Use these tools to work through problems step-by-step:
-            
-            1. `reason` - Work through complex problems step-by-step, tracking your thought process
-            2. `analyze` - Analyze intermediate results and determine next steps
-            3. `finalize` - Provide a final answer after thorough reasoning
-            
-            ## Guidelines
-            - Break down complex problems into smaller steps
-            - Explicitly state your assumptions and reasoning
-            - Use the reason tool multiple times to build on previous steps
-            - Analyze intermediate results before proceeding
-            - End with a finalize step to summarize your conclusion\
-            """)
+            self.instructions = self.DEFAULT_INSTRUCTIONS
+            if add_few_shot:
+                if few_shot_examples is not None:
+                    self.instructions += "\n" + few_shot_examples
+                else:
+                    self.instructions += "\n" + self.FEW_SHOT_EXAMPLES
 
-        # Register tools based on parameters
-        if reason:
-            self.register(self.reason)
+        # Register each tool based on the init flags
+        if think:
+            self.register(self.think)
         if analyze:
             self.register(self.analyze)
-        if finalize:
-            self.register(self.finalize)
 
-    def reason(
-        self, agent: Agent, step_title: str, reasoning: str, action: Optional[str] = None, confidence: float = 0.8
+    def think(
+        self, agent: Agent, title: str, thought: str, action: Optional[str] = None, confidence: float = 0.8
     ) -> str:
-        """Start a reasoning step to work through a problem methodically.
-        This tool helps break down complex problems into logical steps and track the reasoning process.
+        """Use this tool as a scratchpad to reason about the question and work through it step-by-step.
+        This tool will help you break down complex problems into logical steps and track the reasoning process.
+        You can call it as many times as needed. These internal thoughts are never revealed to the user.
 
         Args:
-            step_title: A concise title for this reasoning step
-            reasoning: Your detailed reasoning for this step
-            action: What you'll do based on this reasoning
-            confidence: How confident you are about this step (0.0 to 1.0)
+            title: A concise title for this step
+            thought: Your detailed thought for this step
+            action: What you'll do based on this thought
+            confidence: How confident you are about this thought (0.0 to 1.0)
 
         Returns:
             A summary of the reasoning step
         """
         try:
-            log_debug(f"Reasoning step: {step_title}")
+            log_debug(f"Thought: {title}")
 
             # Create a reasoning step
             reasoning_step = ReasoningStep(
-                title=step_title,
-                reasoning=reasoning,
+                title=title,
+                reasoning=thought,
                 action=action,
                 next_action=NextAction.CONTINUE,
                 confidence=confidence,
             )
 
-            # Add the step to the Agent's session state
+            # Add this step to the Agent's session state
             if agent.session_state is None:
                 agent.session_state = {}
 
@@ -86,7 +78,7 @@ class ReasoningTools(Toolkit):
 
             agent.session_state["reasoning_steps"].append(reasoning_step)
 
-            # Add the step to the run response if we can
+            # Add the step to the run response
             if hasattr(agent, "run_response") and agent.run_response is not None:
                 if agent.run_response.extra_data is None:
                     from agno.run.response import RunResponseExtraData
@@ -98,36 +90,38 @@ class ReasoningTools(Toolkit):
 
                 agent.run_response.extra_data.reasoning_steps.append(reasoning_step)
 
-                # Yield a reasoning step event if streaming
-                if agent.stream_intermediate_steps and hasattr(agent, "create_run_response"):
-                    agent.create_run_response(
-                        content=reasoning_step,
-                        content_type=reasoning_step.__class__.__name__,
-                        event=RunEvent.reasoning_step,
-                    )
-
-            # Return a summary of the reasoning step
-            return f"Step: {step_title}\n\nReasoning: {reasoning}\n\nAction: {action or 'Continue reasoning'}"
-
+            # Return all previous reasoning_steps and the new reasoning_step
+            if "reasoning_steps" in agent.session_state:
+                formatted_reasoning_steps = ""
+                for i, step in enumerate(agent.session_state["reasoning_steps"], 1):
+                    formatted_reasoning_steps += f"""
+                    Step {i}:
+                    Title: {step.title}
+                    Reasoning: {step.reasoning}
+                    Action: {step.action}
+                    Confidence: {step.confidence}
+                    """
+                return formatted_reasoning_steps
+            return reasoning_step.model_dump_json()
         except Exception as e:
-            logger.error(f"Error recording reasoning step: {e}")
-            return f"Error recording reasoning step: {e}"
+            log_error(f"Error recording thought: {e}")
+            return f"Error recording thought: {e}"
 
     def analyze(
         self,
         agent: Agent,
-        step_title: str,
+        title: str,
         result: str,
-        reasoning: str,
+        analysis: str,
         next_action: str = "continue",
         confidence: float = 0.8,
     ) -> str:
-        """Analyze results from a reasoning step and determine next actions.
+        """Use this tool to analyze results from a reasoning step and determine next actions.
 
         Args:
-            step_title: A concise title for this analysis step
+            title: A concise title for this analysis step
             result: The outcome of the previous action
-            reasoning: Your analysis of the results
+            analysis: Your analysis of the results
             next_action: What to do next ("continue", "validate", or "final_answer")
             confidence: How confident you are in this analysis (0.0 to 1.0)
 
@@ -135,7 +129,7 @@ class ReasoningTools(Toolkit):
             A summary of the analysis
         """
         try:
-            log_debug(f"Analysis step: {step_title}")
+            log_debug(f"Analysis step: {title}")
 
             # Map string next_action to enum
             next_action_enum = NextAction.CONTINUE
@@ -146,14 +140,14 @@ class ReasoningTools(Toolkit):
 
             # Create a reasoning step for the analysis
             reasoning_step = ReasoningStep(
-                title=step_title,
+                title=title,
                 result=result,
-                reasoning=reasoning,
+                reasoning=analysis,
                 next_action=next_action_enum,
                 confidence=confidence,
             )
 
-            # Add the step to the Agent's session state
+            # Add this step to the Agent's session state
             if agent.session_state is None:
                 agent.session_state = {}
 
@@ -174,97 +168,102 @@ class ReasoningTools(Toolkit):
 
                 agent.run_response.extra_data.reasoning_steps.append(reasoning_step)
 
-                # Yield a reasoning step event if streaming
-                if agent.stream_intermediate_steps and hasattr(agent, "create_run_response"):
-                    agent.create_run_response(
-                        content=reasoning_step,
-                        content_type=reasoning_step.__class__.__name__,
-                        event=RunEvent.reasoning_step,
-                    )
-
-            # Return a summary of the analysis
-            return f"Analysis: {step_title}\n\nResult: {result}\n\nReasoning: {reasoning}\n\nNext action: {next_action}"
-
+            # Return all previous reasoning_steps and the new reasoning_step
+            if "reasoning_steps" in agent.session_state:
+                formatted_reasoning_steps = ""
+                for i, step in enumerate(agent.session_state["reasoning_steps"], 1):
+                    formatted_reasoning_steps += f"""
+                    Step {i}:
+                    Title: {step.title}
+                    Reasoning: {step.reasoning}
+                    Action: {step.action}
+                    Confidence: {step.confidence}
+                    """
+                return formatted_reasoning_steps
+            return reasoning_step.model_dump_json()
         except Exception as e:
-            logger.error(f"Error recording analysis step: {e}")
-            return f"Error recording analysis step: {e}"
+            log_error(f"Error recording analysis: {e}")
+            return f"Error recording analysis: {e}"
 
-    def finalize(self, agent: Agent, final_answer: str, summary: str) -> str:
-        """Finalize your reasoning and provide a conclusive answer.
+    # --------------------------------------------------------------------------------
+    # Default instructions and few-shot examples
+    # --------------------------------------------------------------------------------
 
-        Args:
-            final_answer: The conclusive answer to the original question
-            summary: A summary of the reasoning process that led to this answer
+    DEFAULT_INSTRUCTIONS = dedent(
+        """\
+        You have access to the Think and Analyze tools that will help you work through problems step-by-step and structure your thinking process.
 
-        Returns:
-            The final answer with reasoning summary
+        1. **Think** (scratchpad):
+            - Purpose: Use the `think` tool as a scratchpad to break down complex problems, outline steps, and decide on immediate actions within your reasoning flow. Use this to structure your internal monologue.
+            - Usage: Call `think` multiple times to build a chain of thought. Detail your reasoning for each step and specify the intended action (e.g., "make a tool call", "perform calculation", "ask clarifying question").
+                You must always `think` before making a tool call or generating an answer.
+
+        2. **Analyze** (evaluation):
+            - Purpose: Evaluate the result of a think step or tool call. Assess if the result is expected, sufficient, or requires further investigation.
+            - Usage: Call `analyze` after a `think` step or a tool call. Determine the `next_action` based on your analysis: `continue` (more reasoning needed), `validate` (seek external confirmation/validation if possible), or `final_answer` (ready to conclude).
+                Also note your reasoning about whether it's correct/sufficient.
+
+        **IMPORTANT:**
+        - Do not expose your internal chain-of-thought to the user.
+        - Use the tools iteratively to build a clear reasoning path: Think -> [Tool Call] -> Analyze -> [Tool Call] -> ... -> Analyze -> Finalize.
+        - Iterate through the (Think → Analyze) cycle as many times as needed until you have a satisfactory final answer.
+        - If you need more data, refine your approach and call Think/Analyze again.
+        - Once you have a satisfactory final answer, provide a concise, clear final answer for the user.
         """
-        try:
-            log_debug(f"Finalizing reasoning: {final_answer}")
+    )
 
-            # Create a final reasoning step
-            final_step = ReasoningStep(
-                title="Final Answer",
-                result=final_answer,
-                reasoning=summary,
-                next_action=NextAction.FINAL_ANSWER,
-                confidence=1.0,
-            )
+    FEW_SHOT_EXAMPLES = dedent(
+        """\
+        You can refer to the examples below as guidance for how to use each tool.
+        ### Examples
 
-            # Add the step to the Agent's session state
-            if agent.session_state is None:
-                agent.session_state = {}
+        **Example 1: Basic Step-by-Step**
+        User: How many continents are there on Earth?
 
-            if "reasoning_steps" not in agent.session_state:
-                agent.session_state["reasoning_steps"] = []
+        Think:
+          step_title="Understand the question"
+          thought="I need to confirm the standard number of continents."
+          action="Recall known information or quickly verify."
+          confidence=0.9
 
-            agent.session_state["reasoning_steps"].append(final_step)
+        Analyze:
+          step_title="Check Basic Fact"
+          result="7 continents (commonly accepted: Africa, Antarctica, Asia, Australia, Europe, North America, South America)"
+          reasoning="The recalled information confirms the standard count is 7."
+          next_action="final_answer"
+          confidence=1.0
 
-            # Get all reasoning steps
-            all_steps = agent.session_state["reasoning_steps"]
+        Final Answer: There are 7 continents on Earth: Africa, Antarctica, Asia, Australia, Europe, North America, and South America.
 
-            # Add the reasoning steps to the run response
-            if hasattr(agent, "run_response") and agent.run_response is not None:
-                if agent.run_response.extra_data is None:
-                    from agno.run.response import RunResponseExtraData
+        **Example 2: Query Requiring External Information**
+        User: What is the capital of France and its current population?
 
-                    agent.run_response.extra_data = RunResponseExtraData()
+        Think:
+          step_title="Plan information retrieval"
+          thought="I need two pieces of information: the capital of France and its population. I should use a search tool to find these facts accurately."
+          action="Use search tool to find the capital first."
+          confidence=0.95
 
-                if agent.run_response.extra_data.reasoning_steps is None:
-                    agent.run_response.extra_data.reasoning_steps = []
+        # [Perform a tool call, e.g., search(query="capital of France")]
+        # [Tool Result: "Paris"]
 
-                agent.run_response.extra_data.reasoning_steps.append(final_step)
+        Analyze:
+          step_title="Analyze Capital Search Result"
+          result="Paris"
+          reasoning="The search confirmed Paris is the capital. Now I need its population."
+          next_action="continue" # Need more information
+          confidence=1.0
 
-                # Collect reasoning content for the message
-                reasoning_content = "\n\n".join(
-                    [
-                        f"Step: {step.title}\n"
-                        f"Reasoning: {step.reasoning}\n"
-                        f"{'Action: ' + step.action if step.action else ''}"
-                        f"{'Result: ' + step.result if step.result else ''}"
-                        for step in all_steps
-                    ]
-                )
+        # [Perform a tool call, e.g., search(query="population of Paris 2024")]
+        # [Tool Result: "Approximately 2.1 million (as of early 2024 estimate)"]
 
-                # Add reasoning content to the most recent assistant message
-                if hasattr(agent, "memory") and agent.memory is not None:
-                    messages = agent.memory.get_messages()
-                    for msg in reversed(messages):
-                        if hasattr(msg, "role") and msg.role == "assistant" and hasattr(msg, "reasoning_content") and msg.reasoning_content is None:
-                            msg.reasoning_content = reasoning_content
-                            break
+        Analyze:
+          step_title="Analyze Population Search Result"
+          result="Approximately 2.1 million (as of early 2024 estimate)"
+          reasoning="The search provided an estimated population figure. I now have both pieces of information requested by the user."
+          next_action="final_answer"
+          confidence=0.9
 
-                # Yield a reasoning completed event if streaming
-                if agent.stream_intermediate_steps and hasattr(agent, "create_run_response"):
-                    agent.create_run_response(
-                        content=ReasoningSteps(reasoning_steps=all_steps),
-                        content_type=ReasoningSteps.__class__.__name__,
-                        event=RunEvent.reasoning_completed,
-                    )
-
-            # Return the final answer with summary
-            return f"Final Answer: {final_answer}\n\nReasoning Summary: {summary}"
-
-        except Exception as e:
-            logger.error(f"Error finalizing reasoning: {e}")
-            return f"Error finalizing reasoning: {e}"
+        Final Answer: The capital of France is Paris. Its estimated population is approximately 2.1 million as of early 2024.
+        """
+    )
