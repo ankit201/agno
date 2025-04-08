@@ -15,7 +15,7 @@
 
 ## Introduction
 
-[Agno](https://docs.agno.com) is a lightweight library for building Agents that can reason, have memory, knowledge, tools and support multi-modal inputs and outputs.
+[Agno](https://docs.agno.com) is a lightweight library for building Agents that can reason, have memory, knowledge, tools and multi-modal support. Build Reasoning Agents, Multi-Modal Agents, Teams of Agents and Agentic Workflows.
 
 Here's an Agent that writes a financial report by reasoning through each step:
 
