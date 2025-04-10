@@ -15,7 +15,7 @@
 
 ## Introduction
 
-[Agno](https://docs.agno.com) is a lightweight library for building Reasoning Agents with memory, knowledge, tools and native multi-modal support. Use Agno to build Reasoning Agents, Multi-Modal Agents, Teams of Agents and Agentic Workflows.
+[Agno](https://docs.agno.com) is a lightweight framework for building Agents with memory, knowledge, tools and reasoning. Use Agno to build Reasoning Agents, Multi-Modal Agents, Teams of Agents and Agentic Workflows.
 
 Here's an Agent that writes a financial report by reasoning through each step:
 
@@ -47,11 +47,11 @@ Agno is simple, fast and model-agnostic. Here are the key features:
 
 - **Lightning Fast**: Agents instantiate 10,000x faster than LangGraph and use 50x less memory (see [performance](#performance)).
 - **Model Agnostic**: Use any model, any provider, no lock-in.
-- **Reasoning Agents**: Build best in class reasoning agents using Reasoning Models, Reasoning Tools or our custom `CoT+Tool-use` approach.
-- **Natively Multi Modal**: Built in support for text, image, audio and video.
-- **Multi Agent Teams**: Industry leading multi-agent architecture with 3 different modes: `route`, `collaborate` and `coordinate`.
+- **Reasoning Agents**: Build agents that can "think" and reason using Reasoning Models, Reasoning Tools or our custom `CoT+Tool-use` approach.
+- **Natively Multi Modal Support**: Agents can take in text, image, audio and video and generate text, image, audio and video.
+- **Advanced Multi Agent Architecture**: Industry leading multi-agent architecture with 3 different modes: `route`, `collaborate` and `coordinate`.
 - **Long-term Memory**: Built in support for long-term memory with our `Storage` and `Memory` classes.
-- **Domain Knowledge**: Add domain knowledge to your Agents with our `Knowledge` classes. Fully async and highly performant.
+- **20+ Vector Databases for Knowledge**: Add domain knowledge to your Agents by integrating with 20+ vector databases. Fully async and highly performant.
 - **Structured Outputs**: First class support for structured outputs using native structured outputs or `json_mode`.
 - **Monitoring**: Track agent sessions and performance in real-time on [agno.com](https://app.agno.com).
 
