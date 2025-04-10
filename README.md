@@ -45,9 +45,9 @@ https://github.com/user-attachments/assets/bbb99955-9848-49a9-9732-3e19d77b2ff8
 
 Agno is simple, fast and model-agnostic. Here are the key features:
 
-- **Lightning Fast**: Agents instantiate 10,000x faster than LangGraph and use 50x less memory (see [performance](#performance)).
+- **Lightning Fast**: Agents instantiate 10,000x faster than LangGraph and use 50x less memory ([benchmarks](#performance)).
 - **Model Agnostic**: Use any model, any provider, no lock-in.
-- **Reasoning Agents**: Build agents that can "think" and reason using Reasoning Models, Reasoning Tools or our custom `CoT+Tool-use` approach.
+- **Reasoning Agents**: Build agents that can "think" and "analyze" using Reasoning Models, Reasoning Tools or our custom `CoT+Tool-use` approach.
 - **Natively Multi Modal Support**: Agents can take in text, image, audio and video and generate text, image, audio and video.
 - **Advanced Multi Agent Architecture**: Industry leading multi-agent architecture with 3 different modes: `route`, `collaborate` and `coordinate`.
 - **Long-term Memory**: Built in support for long-term memory with our `Storage` and `Memory` classes.
