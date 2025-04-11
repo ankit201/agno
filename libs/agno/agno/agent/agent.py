@@ -197,7 +197,7 @@ class Agent:
     # --- Agent Response Settings ---
     # Number of retries to attempt
     retries: int = 0
-    # Delay between retries
+    # Delay between retries (in seconds)
     delay_between_retries: int = 1
     # Exponential backoff: if True, the delay between retries is doubled each time
     exponential_backoff: bool = False
@@ -926,8 +926,9 @@ class Agent:
                 # If a response_model is set, return the response as a structured output
                 if self.response_model is not None and self.parse_response:
                     # Set stream=False and run the agent
-                    log_debug("Setting stream=False as response_model is set")
-                    self.stream = False
+                    if self.stream and self.stream is True:
+                        log_debug("Setting stream=False as response_model is set")
+                        self.stream = False
                     run_response: RunResponse = next(
                         self._run(
                             message=message,
@@ -1422,7 +1423,9 @@ class Agent:
                 # If a response_model is set, return the response as a structured output
                 if self.response_model is not None and self.parse_response:
                     # Set stream=False and run the agent
-                    log_debug("Setting stream=False as response_model is set")
+                    if self.stream and self.stream is True:
+                        log_debug("Setting stream=False as response_model is set")
+                        self.stream = False
                     run_response = await self._arun(
                         message=message,
                         stream=False,
