@@ -125,11 +125,9 @@ async def body() -> None:
     await example_inputs()
 
     ####################################################################
-    # Get user memories
+    # Show user memories
     ####################################################################
-    user_memories = uagi_memory.get_user_memories(user_id=user_id)
-    logger.info(f"---*--- Number of user memories: {len(user_memories)} ---*---")
-    await show_user_memories(user_memories, user_id)
+    await show_user_memories(uagi_memory, user_id)
 
     ####################################################################
     # Display agent messages

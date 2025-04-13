@@ -9,7 +9,7 @@ from agno.document.reader.docx_reader import DocxReader
 from agno.document.reader.pdf_reader import PDFReader
 from agno.document.reader.text_reader import TextReader
 from agno.document.reader.website_reader import WebsiteReader
-from agno.memory.v2 import UserMemory
+from agno.memory.v2 import Memory, UserMemory
 from agno.team import Team
 from agno.utils.log import logger
 from uagi import UAgIConfig, create_uagi
@@ -99,40 +99,56 @@ async def selected_agents() -> List[str]:
     return [agent_options[agent] for agent in selected_agents]
 
 
-async def show_user_memories(user_memories: List[UserMemory], user_id: str) -> None:
+async def show_user_memories(uagi_memory: Memory, user_id: str) -> None:
     """Show use memories in a streamlit container."""
-    with st.expander(f"💭 Memories for {user_id}", expanded=False):
-        if len(user_memories) > 0:
-            # Create a dataframe from the memories
-            memory_data = {
-                "Memory": [memory.memory for memory in user_memories],
-                "Topics": [
-                    ", ".join(memory.topics) if memory.topics else ""
-                    for memory in user_memories
-                ],
-                "Last Updated": [
-                    memory.last_updated.strftime("%Y-%m-%d %H:%M")
-                    if memory.last_updated
-                    else ""
-                    for memory in user_memories
-                ],
-            }
 
-            # Display as a table with custom styling
-            st.dataframe(
-                memory_data,
-                use_container_width=True,
-                column_config={
-                    "Memory": st.column_config.TextColumn("Memory", width="medium"),
-                    "Topics": st.column_config.TextColumn("Topics", width="small"),
-                    "Last Updated": st.column_config.TextColumn(
-                        "Last Updated", width="small"
-                    ),
-                },
-                hide_index=True,
-            )
-        else:
-            st.info("No memories found, tell me about yourself!")
+    with st.container():
+        user_memories = uagi_memory.get_user_memories(user_id=user_id)
+        with st.expander(f"💭 Memories for {user_id}", expanded=False):
+            if len(user_memories) > 0:
+                # Create a dataframe from the memories
+                memory_data = {
+                    "Memory": [memory.memory for memory in user_memories],
+                    "Topics": [
+                        ", ".join(memory.topics) if memory.topics else ""
+                        for memory in user_memories
+                    ],
+                    "Last Updated": [
+                        memory.last_updated.strftime("%Y-%m-%d %H:%M")
+                        if memory.last_updated
+                        else ""
+                        for memory in user_memories
+                    ],
+                }
+
+                # Display as a table with custom styling
+                st.dataframe(
+                    memory_data,
+                    use_container_width=True,
+                    column_config={
+                        "Memory": st.column_config.TextColumn("Memory", width="medium"),
+                        "Topics": st.column_config.TextColumn("Topics", width="small"),
+                        "Last Updated": st.column_config.TextColumn(
+                            "Last Updated", width="small"
+                        ),
+                    },
+                    hide_index=True,
+                )
+            else:
+                st.info("No memories found, tell me about yourself!")
+
+            col1, col2 = st.columns([0.5, 0.5])
+            with col1:
+                if st.button("Clear all memories", key="clear_all_memories"):
+                    await add_message("user", "Clear all my memories")
+                    if "memory_refresh_count" not in st.session_state:
+                        st.session_state.memory_refresh_count = 0
+                    st.session_state.memory_refresh_count += 1
+            with col2:
+                if st.button("Refresh memories", key="refresh_memories"):
+                    if "memory_refresh_count" not in st.session_state:
+                        st.session_state.memory_refresh_count = 0
+                    st.session_state.memory_refresh_count += 1
 
 
 async def example_inputs() -> None:
@@ -178,13 +194,7 @@ async def example_inputs() -> None:
         if st.button("Chocolate Stocks Sweetness Analysis"):
             await add_message(
                 "user",
-                "Perform financial analysis comparing Hershey’s and Lindt stocks to suggest which company might be a sweeter investment choice based on profitability, market trends, and valuation.",
-            )
-
-        if st.button("Clear all memories"):
-            await add_message(
-                "user",
-                "Forget me, i dont want to know you anymore",
+                "Perform financial analysis comparing Hershey's and Lindt stocks to suggest which company might be a sweeter investment choice based on profitability, market trends, and valuation.",
             )
 
 
@@ -253,7 +263,7 @@ def display_tool_calls(tool_calls_container, tools):
 
                 # Check if this is a transfer task
                 is_task_transfer = "transfer_task_to_member" in tool_name
-                is_memory_task = "update_memory" in tool_name
+                is_memory_task = "user_memory" in tool_name
                 expander_title = "🛠️"
                 if is_task_transfer:
                     member_id = tool_args.get("member_id")
