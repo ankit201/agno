@@ -35,7 +35,7 @@ agent = Agent(
 if __name__ == "__main__":
     # Load the knowledge base, comment out after first run
     # Set recreate to True to recreate the knowledge base if needed
-    # agent.knowledge.load(recreate=False)
+    agent.knowledge.load(recreate=False)
     agent.print_response(
         "What are Agents?",
         stream=True,
