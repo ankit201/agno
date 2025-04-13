@@ -276,17 +276,9 @@ def display_tool_calls(tool_calls_container, tools):
                 if execution_time_str != "N/A":
                     expander_title += f" ({execution_time_str})"
 
-                # Create a unique key for this expander
-                expander_key = f"tool_call_{tool_name}_{id(tool_call)}"
-                # Check if we should auto-close this expander
-                if f"{expander_key}_expanded" not in st.session_state:
-                    st.session_state[f"{expander_key}_expanded"] = True
-                    # Set a flag to close this expander on next rerun
-                    st.session_state[f"{expander_key}_should_close"] = True
-
                 with st.expander(
                     expander_title,
-                    expanded=st.session_state[f"{expander_key}_expanded"],
+                    expanded=False,
                 ):
                     # Show query/code/command with syntax highlighting
                     if isinstance(tool_args, dict):
@@ -320,10 +312,6 @@ def display_tool_calls(tool_calls_container, tools):
                         except Exception as e:
                             logger.debug(f"Could not display tool content: {e}")
                             st.error("Could not display tool content.")
-
-                    if st.session_state[f"{expander_key}_should_close"]:
-                        st.session_state[f"{expander_key}_expanded"] = False
-                        st.session_state[f"{expander_key}_should_close"] = False
     except Exception as e:
         logger.error(f"Error displaying tool calls: {str(e)}")
         tool_calls_container.error("Failed to display tool results")
