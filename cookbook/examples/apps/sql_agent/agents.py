@@ -170,7 +170,7 @@ def get_sql_agent(
         tools=[
             SQLTools(db_url=db_url, list_tables=False),
             FileTools(base_dir=output_dir),
-            ReasoningTools(add_instructions=True),
+            ReasoningTools(add_instructions=True, add_few_shot=True),
         ],
         debug_mode=debug_mode,
         description=dedent("""\
