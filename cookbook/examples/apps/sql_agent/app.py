@@ -15,7 +15,7 @@ from utils import (
 
 nest_asyncio.apply()
 st.set_page_config(
-    page_title="Reasoning SQL Agent",
+    page_title="SQrL: Text2SQL Reasoning Agent",
     page_icon="💎",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -30,10 +30,10 @@ def main() -> None:
     # App header
     ####################################################################
     st.markdown(
-        "<h1 class='main-title'>Reasoning SQL Agent</h1>", unsafe_allow_html=True
+        "<h1 class='main-title'>SQrL: Text2SQL Reasoning Agent</h1>", unsafe_allow_html=True
     )
     st.markdown(
-        "<p class='subtitle'>Your intelligent SQL Agent that can think, analyze and reason, powered by Agno</p>",
+        "<p class='subtitle'>SQrL is an intelligent SQL Agent that can think, analyze and reason, powered by Agno</p>",
         unsafe_allow_html=True,
     )
 
