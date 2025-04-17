@@ -74,7 +74,7 @@ pip install -U agno
 
 **Agents** are AI programs that operate autonomously.
 
-- The core of an Agent is a model, the tools it has access to, and instructions to guide its behavior.
+- They use a language model to reason, run tools to act and interact with the real world, and use instructions to guide their behavior.
 - Agents also have **memory**, **knowledge**, **storage** and the ability to **reason**.
 
 Read more about each of these in the [docs](https://docs.agno.com/introduction/agents#what-are-agents%3F).
