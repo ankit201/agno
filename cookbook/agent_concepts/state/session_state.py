@@ -51,7 +51,6 @@ agent = Agent(
 
         Current shopping list: {shopping_list}
     """),
-    show_tool_calls=True,
     add_state_in_messages=True,
     markdown=True,
 )
