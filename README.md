@@ -330,8 +330,8 @@ Reach out to support@agno.com to get involved.
 
 At Agno, we're obsessed with performance. Why? because even simple AI workflows can spawn thousands of Agents to achieve their goals. Scale that to a modest number of users and performance becomes a bottleneck. Agno is designed to power high performance agentic systems:
 
-- Agent instantiation: ~2μs on average (~10,000x faster than LangGraph).
-- Memory footprint: ~3.75Kib on average (~50x less memory than LangGraph).
+- Agent instantiation: ~3μs on average
+- Memory footprint: ~5Kib on average
 
 > Tested on an Apple M4 Mackbook Pro.
 
@@ -391,7 +391,7 @@ Dividing the average memory usage of a Langgraph Agent by the average memory usa
 
 Agno agents are designed for performance and while we do share some benchmarks against other frameworks, we should be mindful that accuracy and reliability are more important than speed.
 
-We'll be publishing accuracy and reliability benchmarks running on Github actions in the coming weeks. Given that each framework is different and we won't be able to tune their performance like we do with Agno, for future benchmarks we'll only be comparing against ourselves.
+We'll be publishing accuracy and reliability benchmarks running on Github actions in the future. Given that each framework is different and we won't be able to tune their performance like we do with Agno, for future benchmarks we'll only be comparing against ourselves.
 
 ## Cursor Setup
 
