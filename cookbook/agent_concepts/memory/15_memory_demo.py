@@ -12,21 +12,21 @@ db_file = "tmp/agent.db"
 
 # Initialize memory.v2
 memory = Memory(
+    # Use any model for creating memories
     model=OpenAIChat(id="gpt-4.1"),
     db=SqliteMemoryDb(table_name="user_memories", db_file=db_file),
-    delete_memories=True,
-    clear_memories=True,
 )
 # Initialize storage
 storage = SqliteStorage(table_name="agent_sessions", db_file=db_file)
 
 # Initialize Agent
 memory_agent = Agent(
-    user_id=user_id,
     model=OpenAIChat(id="gpt-4.1"),
     # Store memories in a database
     memory=memory,
-    # Run the MemoryManager after each response
+    # Give the Agent the ability to update memories
+    enable_agentic_memory=True,
+    # OR - Run the MemoryManager after each response
     enable_user_memories=True,
     # Store the chat history in the database
     storage=storage,
@@ -37,7 +37,7 @@ memory_agent = Agent(
     markdown=True,
 )
 
-# memory.clear()
+memory.clear()
 memory_agent.print_response(
     "My name is Ava and I like to ski.",
     user_id=user_id,
