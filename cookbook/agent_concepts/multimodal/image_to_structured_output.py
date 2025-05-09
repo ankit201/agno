@@ -4,6 +4,7 @@ from agno.agent import Agent
 from agno.media import Image
 from agno.models.openai import OpenAIChat
 from pydantic import BaseModel, Field
+from rich.pretty import pprint
 
 
 class MovieScript(BaseModel):
@@ -19,7 +20,7 @@ class MovieScript(BaseModel):
 
 agent = Agent(model=OpenAIChat(id="gpt-4o"), response_model=MovieScript)
 
-agent.print_response(
+response = agent.run(
     "Write a movie about this image",
     images=[
         Image(
@@ -28,3 +29,5 @@ agent.print_response(
     ],
     stream=True,
 )
+
+pprint(response.content)
