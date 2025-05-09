@@ -12,7 +12,7 @@ def get_upcoming_spacex_launches(num_launches: int = 5) -> str:
     launches = sorted(launches, key=lambda x: x["date_unix"])[:num_launches]
     return json.dumps(launches, indent=4)
 
-# Create a Context-Aware Agent that can access real-time SpaceX data
+# Create an Agent that has access to real-time SpaceX data
 agent = Agent(
     model=OpenAIChat(id="gpt-4.1"),
     # Each function in the context is evaluated at runtime
