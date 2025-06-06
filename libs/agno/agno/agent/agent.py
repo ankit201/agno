@@ -3353,6 +3353,7 @@ class Agent:
         with ThreadPoolExecutor(max_workers=3) as executor:
             futures = []
 
+
             # Create user memories from single message
             if self.enable_user_memories and run_messages.user_message is not None:
                 log_debug("Creating user memories.")
@@ -3365,7 +3366,7 @@ class Agent:
                 )
 
             # Parse messages if provided
-            if messages is not None and len(messages) > 0:
+            if self.enable_user_memories and messages is not None and len(messages) > 0:
                 parsed_messages = []
                 for _im in messages:
                     if isinstance(_im, Message):
@@ -3420,7 +3421,7 @@ class Agent:
             )
 
         # Parse messages if provided
-        if messages is not None and len(messages) > 0:
+        if self.enable_user_memories and messages is not None and len(messages) > 0:
             parsed_messages = []
             for _im in messages:
                 if isinstance(_im, Message):
@@ -5588,7 +5589,7 @@ class Agent:
             from agno.reasoning.openai import is_openai_reasoning_model
 
             reasoning_agent = self.reasoning_agent or get_reasoning_agent(
-                reasoning_model=reasoning_model, monitoring=self.monitoring
+                reasoning_model=reasoning_model, monitoring=self.monitoring, debug_mode=self.debug_mode
             )
             is_deepseek = is_deepseek_reasoning_model(reasoning_model)
             is_groq = is_groq_reasoning_model(reasoning_model)
