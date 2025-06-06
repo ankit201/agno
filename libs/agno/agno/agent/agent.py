@@ -3353,7 +3353,6 @@ class Agent:
         with ThreadPoolExecutor(max_workers=3) as executor:
             futures = []
 
-
             # Create user memories from single message
             if self.enable_user_memories and run_messages.user_message is not None:
                 log_debug("Creating user memories.")
@@ -4199,6 +4198,7 @@ class Agent:
         # 3.2.3 Add the current location
         if self.add_location_to_instructions:
             from agno.utils.location import get_location
+
             location = get_location()
             if location:
                 location_str = ", ".join(

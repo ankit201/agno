@@ -4499,6 +4499,7 @@ class Team:
         # 1.3.3 Add the current location
         if self.add_location_to_instructions:
             from agno.utils.location import get_location
+
             location = get_location()
             if location:
                 location_str = ", ".join(
@@ -4612,7 +4613,7 @@ class Team:
             if isinstance(self.memory, Memory) and self.add_memory_references:
                 if not user_id:
                     user_id = "default"
-                user_memories = self.memory.get_user_memories(user_id=user_id) # type: ignore
+                user_memories = self.memory.get_user_memories(user_id=user_id)  # type: ignore
                 if user_memories and len(user_memories) > 0:
                     system_message_content += (
                         "You have access to memories from previous interactions with the user that you can use:\n\n"
