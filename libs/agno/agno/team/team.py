@@ -741,7 +741,13 @@ class Team:
 
             if self.mode == "route":
                 user_message = self._get_user_message(
-                    message, audio=audio, images=images, videos=videos, files=files, knowledge_filters=effective_filters
+                    message,
+                    audio=audio,
+                    images=images,
+                    videos=videos,
+                    files=files,
+                    knowledge_filters=effective_filters,
+                    user_id=user_id,
                 )
                 forward_task_func: Function = self.get_forward_task_function(
                     message=user_message,
@@ -1208,7 +1214,13 @@ class Team:
 
             if self.mode == "route":
                 user_message = self._get_user_message(
-                    message, audio=audio, images=images, videos=videos, files=files, knowledge_filters=effective_filters
+                    message,
+                    audio=audio,
+                    images=images,
+                    videos=videos,
+                    files=files,
+                    knowledge_filters=effective_filters,
+                    user_id=user_id,
                 )
                 forward_task_func: Function = self.get_forward_task_function(
                     message=user_message,
@@ -4783,6 +4795,7 @@ class Team:
         # 3. Add user message to run_messages
         user_message = self._get_user_message(
             message,
+            user_id=user_id,
             audio=audio,
             images=images,
             videos=videos,
@@ -4801,6 +4814,7 @@ class Team:
     def _get_user_message(
         self,
         message: Optional[Union[str, List, Dict, Message]] = None,
+        user_id: Optional[str] = None,
         audio: Optional[Sequence[Audio]] = None,
         images: Optional[Sequence[Image]] = None,
         videos: Optional[Sequence[Video]] = None,
@@ -4846,10 +4860,10 @@ class Team:
         if isinstance(message, str) or isinstance(message, list):
             if self.add_state_in_messages:
                 if isinstance(message, str):
-                    user_message_content = self._format_message_with_state_variables(message)
+                    user_message_content = self._format_message_with_state_variables(message, user_id=user_id)
                 elif isinstance(message, list):
                     user_message_content = "\n".join(
-                        [self._format_message_with_state_variables(msg) for msg in message]
+                        [self._format_message_with_state_variables(msg, user_id=user_id) for msg in message]
                     )
             else:
                 if isinstance(message, str):
@@ -4911,8 +4925,14 @@ class Team:
             except Exception as e:
                 log_warning(f"Failed to validate message: {e}")
 
-    def _format_message_with_state_variables(self, message: str, user_id: Optional[str] = None) -> Any:
+    def _format_message_with_state_variables(self, message: Any, user_id: Optional[str] = None) -> Any:
         """Format a message with the session state variables."""
+        import re
+        import string
+
+        if not isinstance(message, str):
+            return message
+
         format_variables = ChainMap(
             self.session_state or {},
             self.team_session_state or {},
@@ -4920,7 +4940,21 @@ class Team:
             self.extra_data or {},
             {"user_id": user_id} if user_id is not None else {},
         )
-        return self._formatter.format(message, **format_variables)  # type: ignore
+        converted_msg = message
+        for var_name in format_variables.keys():
+            # Only convert standalone {var_name} patterns, not nested ones
+            pattern = r"\{" + re.escape(var_name) + r"\}"
+            replacement = "${" + var_name + "}"
+            converted_msg = re.sub(pattern, replacement, converted_msg)
+
+        # Use Template to safely substitute variables
+        template = string.Template(converted_msg)
+        try:
+            result = template.safe_substitute(format_variables)
+            return result
+        except Exception as e:
+            log_warning(f"Template substitution failed: {e}")
+            return message
 
     def _convert_context_to_string(self, context: Dict[str, Any]) -> str:
         """Convert the context dictionary to a string representation.
