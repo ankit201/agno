@@ -121,7 +121,6 @@ def get_json_schema_for_arg(type_hint: Any) -> Optional[Dict[str, Any]]:
     # log_info(f"Type args: {type_args}")
     type_origin = get_origin(type_hint)
     # log_info(f"Type origin: {type_origin}")
-    print(type_hint, type_origin)
     if type_origin is not None:
         if type_origin in (list, tuple, set, frozenset):
             json_schema_for_items = get_json_schema_for_arg(type_args[0]) if type_args else {"type": "string"}
