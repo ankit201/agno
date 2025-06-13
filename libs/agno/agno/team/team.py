@@ -4474,7 +4474,7 @@ class Team:
                 session_id=session_id,
                 stream=self.stream or False,
                 stream_intermediate_steps=self.stream_intermediate_steps,
-                async_mode=False,
+                async_mode=async_mode,
                 images=images,  # type: ignore
                 videos=videos,  # type: ignore
                 audio=audio,  # type: ignore
@@ -4492,7 +4492,7 @@ class Team:
                     user_id=user_id,
                     stream=self.stream or False,
                     stream_intermediate_steps=self.stream_intermediate_steps,
-                    async_mode=False,
+                    async_mode=async_mode,
                     images=images,  # type: ignore
                     videos=videos,  # type: ignore
                     audio=audio,  # type: ignore
@@ -4509,7 +4509,7 @@ class Team:
                 user_id=user_id,
                 stream=self.stream or False,
                 stream_intermediate_steps=self.stream_intermediate_steps,
-                async_mode=False,
+                async_mode=async_mode,
                 images=images,  # type: ignore
                 videos=videos,  # type: ignore
                 audio=audio,  # type: ignore
