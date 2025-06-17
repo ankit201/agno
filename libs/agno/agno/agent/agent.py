@@ -5,7 +5,6 @@ from collections import ChainMap, defaultdict, deque
 from dataclasses import asdict, dataclass
 from os import getenv
 from textwrap import dedent
-from threading import Thread
 from typing import (
     Any,
     AsyncIterator,
@@ -278,6 +277,10 @@ class Agent:
     # Stream the intermediate steps from the Agent
     stream_intermediate_steps: bool = False
 
+    # Persist the events on the run response
+    store_events: bool = False
+    events_to_skip: Optional[List[str]] = None
+
     # --- Agent Team ---
     # The team of agents that this agent can transfer tasks to.
     team: Optional[List[Agent]] = None
@@ -395,6 +398,8 @@ class Agent:
         save_response_to_file: Optional[str] = None,
         stream: Optional[bool] = None,
         stream_intermediate_steps: bool = False,
+        store_events: bool = False,
+        events_to_skip: Optional[List[str]] = None,
         team: Optional[List[Agent]] = None,
         team_data: Optional[Dict[str, Any]] = None,
         role: Optional[str] = None,
@@ -497,6 +502,10 @@ class Agent:
         self.stream = stream
         self.stream_intermediate_steps = stream_intermediate_steps
 
+        self.store_events = store_events
+        # By default, we skip the run response content event
+        self.events_to_skip = events_to_skip or [RunEvent.run_response_content.value]
+
         self.team = team
 
         self.team_data = team_data
@@ -532,6 +541,8 @@ class Agent:
         self._rebuild_tools: bool = True
 
         self._formatter: Optional[SafeFormatter] = None
+
+        self._memory_deepcopy_done: bool = False
 
     def set_agent_id(self) -> str:
         if self.agent_id is None:
@@ -618,6 +629,12 @@ class Agent:
 
         if self.memory is None:
             self.memory = Memory()
+        elif not self._memory_deepcopy_done:
+            from copy import deepcopy
+
+            # We store a copy of memory to ensure different team instances reference unique memory copy
+            self.memory = deepcopy(self.memory)
+            self._memory_deepcopy_done = True
 
         # Default to the agent's model if no model is provided
         if isinstance(self.memory, Memory):
@@ -770,14 +787,14 @@ class Agent:
         3. Add the run to memory
         4. Update Agent Memory
         5. Calculate session metrics
-        6. Save session to storage
-        7. Save output to file if save_response_to_file is set
+        6. Save output to file if save_response_to_file is set
+        7. Save session to storage
         """
         log_debug(f"Agent Run Start: {run_response.run_id}", center=True)
 
         # Start the Run by yielding a RunStarted event
         if stream_intermediate_steps:
-            yield create_run_response_started_event(run_response)
+            yield self._handle_event(create_run_response_started_event(run_response), run_response)
 
         # 1. Reason about the task if reasoning is enabled
         yield from self._handle_reasoning_stream(run_messages=run_messages)
@@ -823,19 +840,19 @@ class Agent:
         # 5. Calculate session metrics
         self._set_session_metrics(run_messages)
 
-        # 6. Save session to storage
-        self.write_to_storage(user_id=user_id, session_id=session_id)
-
-        # 7. Save output to file if save_response_to_file is set
+        # 6. Save output to file if save_response_to_file is set
         self.save_run_response_to_file(message=message, session_id=session_id)
+
+        if stream_intermediate_steps:
+            yield self._handle_event(create_run_response_completed_event(from_run_response=run_response), run_response)
+
+        # 7. Save session to storage
+        self.write_to_storage(user_id=user_id, session_id=session_id)
 
         # Log Agent Run
         self._log_agent_run(user_id=user_id, session_id=session_id)
 
         log_debug(f"Agent Run End: {run_response.run_id}", center=True, symbol="*")
-
-        if stream_intermediate_steps:
-            yield create_run_response_completed_event(from_run_response=run_response)
 
     @overload
     def run(
@@ -984,15 +1001,17 @@ class Agent:
             knowledge_filters=effective_filters,
         )
 
-        # Register Agent
-        thread = Thread(target=self.register_agent)
-        thread.start()
-
         # Create a run_id for this specific run
         run_id = str(uuid4())
 
         # Create a new run_response for this attempt
-        run_response = RunResponse(run_id=run_id, session_id=session_id, agent_id=self.agent_id, agent_name=self.name)
+        run_response = RunResponse(
+            run_id=run_id,
+            session_id=session_id,
+            agent_id=self.agent_id,
+            agent_name=self.name,
+            team_session_id=self.team_session_id,
+        )
 
         run_response.model = self.model.id if self.model is not None else None
         run_response.model_provider = self.model.provider if self.model is not None else None
@@ -1226,13 +1245,13 @@ class Agent:
         3. Add the run to memory
         4. Update Agent Memory
         5. Calculate session metrics
-        6. Save session to storage
-        7. Save output to file if save_response_to_file is set
+        6. Save output to file if save_response_to_file is set
+        7. Save session to storage
         """
         log_debug(f"Agent Run Start: {run_response.run_id}", center=True)
         # Start the Run by yielding a RunStarted event
         if stream_intermediate_steps:
-            yield create_run_response_started_event(run_response)
+            yield self._handle_event(create_run_response_started_event(run_response), run_response)
 
         # 1. Reason about the task if reasoning is enabled
         async for item in self._ahandle_reasoning_stream(run_messages=run_messages):
@@ -1281,19 +1300,19 @@ class Agent:
         # 5. Calculate session metrics
         self._set_session_metrics(run_messages)
 
-        # 6. Save session to storage
-        self.write_to_storage(user_id=user_id, session_id=session_id)
-
-        # 7. Save output to file if save_response_to_file is set
+        # 6. Save output to file if save_response_to_file is set
         self.save_run_response_to_file(message=message, session_id=session_id)
+
+        if stream_intermediate_steps:
+            yield self._handle_event(create_run_response_completed_event(from_run_response=run_response), run_response)
+
+        # 7. Save session to storage
+        self.write_to_storage(user_id=user_id, session_id=session_id)
 
         # Log Agent Run
         await self._alog_agent_run(user_id=user_id, session_id=session_id)
 
         log_debug(f"Agent Run End: {run_response.run_id}", center=True, symbol="*")
-
-        if stream_intermediate_steps:
-            yield create_run_response_completed_event(from_run_response=run_response)
 
     async def arun(
         self,
@@ -1402,14 +1421,17 @@ class Agent:
             knowledge_filters=effective_filters,
         )
 
-        # Register Agent
-        asyncio.create_task(self._aregister_agent())
-
         # Create a run_id for this specific run
         run_id = str(uuid4())
 
         # Create a new run_response for this attempt
-        run_response = RunResponse(run_id=run_id, session_id=session_id, agent_id=self.agent_id, agent_name=self.name)
+        run_response = RunResponse(
+            run_id=run_id,
+            session_id=session_id,
+            agent_id=self.agent_id,
+            agent_name=self.name,
+            team_session_id=self.team_session_id,
+        )
 
         run_response.model = self.model.id if self.model is not None else None
         run_response.model_provider = self.model.provider if self.model is not None else None
@@ -1901,12 +1923,12 @@ class Agent:
         3. Add the run to memory
         4. Update Agent Memory
         5. Calculate session metrics
-        6. Save session to storage
-        7. Save output to file if save_response_to_file is set
+        6. Save output to file if save_response_to_file is set
+        7. Save session to storage
         """
         # Start the Run by yielding a RunContinued event
         if stream_intermediate_steps:
-            yield create_run_response_continued_event(run_response)
+            yield self._handle_event(create_run_response_continued_event(run_response), run_response)
 
         # 1. Handle the updated tools
         yield from self._handle_tool_call_updates_stream(run_response=run_response, run_messages=run_messages)
@@ -1952,19 +1974,19 @@ class Agent:
         # 5. Calculate session metrics
         self._set_session_metrics(run_messages)
 
-        # 6. Save session to storage
-        self.write_to_storage(user_id=user_id, session_id=session_id)
-
-        # 7. Save output to file if save_response_to_file is set
+        # 6. Save output to file if save_response_to_file is set
         self.save_run_response_to_file(message=message, session_id=session_id)
+
+        if stream_intermediate_steps:
+            yield self._handle_event(create_run_response_completed_event(run_response), run_response)
+
+        # 7. Save session to storage
+        self.write_to_storage(user_id=user_id, session_id=session_id)
 
         # Log Agent Run
         self._log_agent_run(user_id=user_id, session_id=session_id)
 
         log_debug(f"Agent Run End: {run_response.run_id}", center=True, symbol="*")
-
-        if stream_intermediate_steps:
-            yield create_run_response_completed_event(run_response)
 
     async def acontinue_run(
         self,
@@ -2321,12 +2343,12 @@ class Agent:
         3. Add the run to memory
         4. Update Agent Memory
         5. Calculate session metrics
-        6. Save session to storage
-        7. Save output to file if save_response_to_file is set
+        6. Save output to file if save_response_to_file is set
+        7. Save session to storage
         """
         # Start the Run by yielding a RunContinued event
         if stream_intermediate_steps:
-            yield create_run_response_continued_event(run_response)
+            yield self._handle_event(create_run_response_continued_event(run_response), run_response)
 
         # 1. Handle the updated tools
         async for event in self._ahandle_tool_call_updates_stream(run_response=run_response, run_messages=run_messages):
@@ -2375,19 +2397,19 @@ class Agent:
         # 5. Calculate session metrics
         self._set_session_metrics(run_messages)
 
-        # 6. Save session to storage
-        self.write_to_storage(user_id=user_id, session_id=session_id)
-
-        # 7. Save output to file if save_response_to_file is set
+        # 6. Save output to file if save_response_to_file is set
         self.save_run_response_to_file(message=message, session_id=session_id)
+
+        if stream_intermediate_steps:
+            yield self._handle_event(create_run_response_completed_event(run_response), run_response)
+
+        # 7. Save session to storage
+        self.write_to_storage(user_id=user_id, session_id=session_id)
 
         # Log Agent Run
         await self._alog_agent_run(user_id=user_id, session_id=session_id)
 
         log_debug(f"Agent Run End: {run_response.run_id}", center=True, symbol="*")
-
-        if stream_intermediate_steps:
-            yield create_run_response_completed_event(run_response)
 
     def _get_paused_content(self, run_response: RunResponse) -> str:
         paused_content = ""
@@ -2471,10 +2493,12 @@ class Agent:
         self.save_run_response_to_file(message=message, session_id=session_id)
 
         # We return and await confirmation/completion for the tools that require it
-
-        yield create_run_response_paused_event(
-            from_run_response=run_response,
-            tools=run_response.tools,
+        yield self._handle_event(
+            create_run_response_paused_event(
+                from_run_response=run_response,
+                tools=run_response.tools,
+            ),
+            run_response,
         )
 
     def _convert_response_to_structured_format(self, run_response: RunResponse):
@@ -2561,14 +2585,20 @@ class Agent:
         ):
             if isinstance(call_result, ModelResponse):
                 if call_result.event == ModelResponseEvent.tool_call_started.value:
-                    yield create_tool_call_started_event(from_run_response=self.run_response, tool=tool)
+                    yield self._handle_event(
+                        create_tool_call_started_event(from_run_response=self.run_response, tool=tool),
+                        self.run_response,
+                    )
 
                 if call_result.event == ModelResponseEvent.tool_call_completed.value and call_result.tool_executions:
                     tool_execution = call_result.tool_executions[0]
                     tool.result = tool_execution.result
                     tool.tool_call_error = tool_execution.tool_call_error
-                    yield create_tool_call_completed_event(
-                        from_run_response=self.run_response, tool=tool, content=call_result.content
+                    yield self._handle_event(
+                        create_tool_call_completed_event(
+                            from_run_response=self.run_response, tool=tool, content=call_result.content
+                        ),
+                        self.run_response,
                     )
 
         if len(function_call_results) > 0:
@@ -2603,13 +2633,19 @@ class Agent:
         ):
             if isinstance(call_result, ModelResponse):
                 if call_result.event == ModelResponseEvent.tool_call_started.value:
-                    yield create_tool_call_started_event(from_run_response=self.run_response, tool=tool)
+                    yield self._handle_event(
+                        create_tool_call_started_event(from_run_response=self.run_response, tool=tool),
+                        self.run_response,
+                    )
                 if call_result.event == ModelResponseEvent.tool_call_completed.value and call_result.tool_executions:
                     tool_execution = call_result.tool_executions[0]
                     tool.result = tool_execution.result
                     tool.tool_call_error = tool_execution.tool_call_error
-                    yield create_tool_call_completed_event(
-                        from_run_response=self.run_response, tool=tool, content=call_result.content
+                    yield self._handle_event(
+                        create_tool_call_completed_event(
+                            from_run_response=self.run_response, tool=tool, content=call_result.content
+                        ),
+                        self.run_response,
                     )
         if len(function_call_results) > 0:
             run_messages.messages.extend(function_call_results)
@@ -2931,12 +2967,16 @@ class Agent:
                 and run_messages.user_message is not None
             ):
                 if stream_intermediate_steps:
-                    yield create_memory_update_started_event(from_run_response=self.run_response)
+                    yield self._handle_event(
+                        create_memory_update_started_event(from_run_response=self.run_response), self.run_response
+                    )
 
                 self.memory.update_memory(input=run_messages.user_message.get_content_string())
 
                 if stream_intermediate_steps:
-                    yield create_memory_update_completed_event(from_run_response=self.run_response)
+                    yield self._handle_event(
+                        create_memory_update_completed_event(from_run_response=self.run_response), self.run_response
+                    )
 
             if messages is not None and len(messages) > 0:
                 for _im in messages:
@@ -2992,7 +3032,9 @@ class Agent:
 
                 # Yield UpdatingMemory event
                 if stream_intermediate_steps:
-                    yield create_memory_update_started_event(from_run_response=self.run_response)
+                    yield self._handle_event(
+                        create_memory_update_started_event(from_run_response=self.run_response), self.run_response
+                    )
 
             if messages is not None and len(messages) > 0:
                 for _im in messages:
@@ -3062,10 +3104,13 @@ class Agent:
 
             if all_reasoning_steps:
                 self._add_reasoning_metrics_to_extra_data(reasoning_state["reasoning_time_taken"])
-                yield create_reasoning_completed_event(
-                    from_run_response=run_response,
-                    content=ReasoningSteps(reasoning_steps=all_reasoning_steps),
-                    content_type=ReasoningSteps.__name__,
+                yield self._handle_event(
+                    create_reasoning_completed_event(
+                        from_run_response=run_response,
+                        content=ReasoningSteps(reasoning_steps=all_reasoning_steps),
+                        content_type=ReasoningSteps.__name__,
+                    ),
+                    run_response,
                 )
 
         # Update RunResponse
@@ -3121,10 +3166,13 @@ class Agent:
 
             if all_reasoning_steps:
                 self._add_reasoning_metrics_to_extra_data(reasoning_state["reasoning_time_taken"])
-                yield create_reasoning_completed_event(
-                    from_run_response=run_response,
-                    content=ReasoningSteps(reasoning_steps=all_reasoning_steps),
-                    content_type=ReasoningSteps.__name__,
+                yield self._handle_event(
+                    create_reasoning_completed_event(
+                        from_run_response=run_response,
+                        content=ReasoningSteps(reasoning_steps=all_reasoning_steps),
+                        content_type=ReasoningSteps.__name__,
+                    ),
+                    run_response,
                 )
 
         # Update RunResponse
@@ -3151,7 +3199,7 @@ class Agent:
             model_response_event, tuple(get_args(TeamRunResponseEvent))
         ):
             # We just bubble the event up
-            yield model_response_event  # type: ignore
+            yield self._handle_event(model_response_event, run_response)  # type: ignore
         else:
             model_response_event = cast(ModelResponse, model_response_event)
             # If the model response is an assistant_response, yield a RunResponse
@@ -3184,12 +3232,15 @@ class Agent:
                     or model_response_event.redacted_thinking is not None
                     or model_response_event.citations is not None
                 ):
-                    yield create_run_response_content_event(
-                        from_run_response=run_response,
-                        content=model_response_event.content,
-                        thinking=model_response_event.thinking,
-                        redacted_thinking=model_response_event.redacted_thinking,
-                        citations=model_response_event.citations,
+                    yield self._handle_event(
+                        create_run_response_content_event(
+                            from_run_response=run_response,
+                            content=model_response_event.content,
+                            thinking=model_response_event.thinking,
+                            redacted_thinking=model_response_event.redacted_thinking,
+                            citations=model_response_event.citations,
+                        ),
+                        run_response,
                     )
 
                 # Process audio
@@ -3220,17 +3271,23 @@ class Agent:
                     )
                     run_response.created_at = model_response_event.created_at
 
-                    yield create_run_response_content_event(
-                        from_run_response=run_response,
-                        response_audio=run_response.response_audio,
+                    yield self._handle_event(
+                        create_run_response_content_event(
+                            from_run_response=run_response,
+                            response_audio=run_response.response_audio,
+                        ),
+                        run_response,
                     )
 
                 if model_response_event.image is not None:
                     self.add_image(model_response_event.image)
 
-                    yield create_run_response_content_event(
-                        from_run_response=run_response,
-                        image=model_response_event.image,
+                    yield self._handle_event(
+                        create_run_response_content_event(
+                            from_run_response=run_response,
+                            image=model_response_event.image,
+                        ),
+                        run_response,
                     )
 
             # Handle tool interruption events
@@ -3263,7 +3320,9 @@ class Agent:
 
                     # Yield each tool call started event
                     for tool in tool_executions_list:
-                        yield create_tool_call_started_event(from_run_response=run_response, tool=tool)
+                        yield self._handle_event(
+                            create_tool_call_started_event(from_run_response=run_response, tool=tool), run_response
+                        )
 
             # If the model response is a tool_call_completed, update the existing tool call in the run_response
             elif model_response_event.event == ModelResponseEvent.tool_call_completed.value:
@@ -3299,20 +3358,28 @@ class Agent:
                                 reasoning_state["reasoning_time_taken"] = reasoning_state[
                                     "reasoning_time_taken"
                                 ] + float(metrics.time)
-                        yield create_tool_call_completed_event(
-                            from_run_response=run_response, tool=tool_call, content=model_response_event.content
+                        yield self._handle_event(
+                            create_tool_call_completed_event(
+                                from_run_response=run_response, tool=tool_call, content=model_response_event.content
+                            ),
+                            run_response,
                         )
 
                 if stream_intermediate_steps:
                     if reasoning_step is not None:
                         if not reasoning_state["reasoning_started"]:
-                            yield create_reasoning_started_event(from_run_response=run_response)
+                            yield self._handle_event(
+                                create_reasoning_started_event(from_run_response=run_response), run_response
+                            )
                             reasoning_state["reasoning_started"] = True
 
-                        yield create_reasoning_step_event(
-                            from_run_response=run_response,
-                            reasoning_step=reasoning_step,
-                            reasoning_content=run_response.reasoning_content or "",
+                        yield self._handle_event(
+                            create_reasoning_step_event(
+                                from_run_response=run_response,
+                                reasoning_step=reasoning_step,
+                                reasoning_content=run_response.reasoning_content or "",
+                            ),
+                            run_response,
                         )
 
     def _generator_wrapper(self, event: RunResponseEvent) -> Iterator[RunResponseEvent]:
@@ -3458,7 +3525,9 @@ class Agent:
 
             if futures:
                 if self.stream_intermediate_steps:
-                    yield create_memory_update_started_event(from_run_response=self.run_response)
+                    yield self._handle_event(
+                        create_memory_update_started_event(from_run_response=self.run_response), self.run_response
+                    )
 
                 # Wait for all operations to complete and handle any errors
                 for future in as_completed(futures):
@@ -3468,7 +3537,9 @@ class Agent:
                         log_warning(f"Error in memory/summary operation: {str(e)}")
 
                 if self.stream_intermediate_steps:
-                    yield create_memory_update_completed_event(from_run_response=self.run_response)
+                    yield self._handle_event(
+                        create_memory_update_completed_event(from_run_response=self.run_response), self.run_response
+                    )
 
     async def _amake_memories_and_summaries(
         self,
@@ -3518,7 +3589,9 @@ class Agent:
 
         if tasks:
             if self.stream_intermediate_steps:
-                yield create_memory_update_started_event(from_run_response=self.run_response)
+                yield self._handle_event(
+                    create_memory_update_started_event(from_run_response=self.run_response), self.run_response
+                )
 
             # Execute all tasks concurrently and handle any errors
             try:
@@ -3527,7 +3600,9 @@ class Agent:
                 log_warning(f"Error in memory/summary operation: {str(e)}")
 
             if self.stream_intermediate_steps:
-                yield create_memory_update_completed_event(from_run_response=self.run_response)
+                yield self._handle_event(
+                    create_memory_update_completed_event(from_run_response=self.run_response), self.run_response
+                )
 
     def _raise_if_async_tools(self) -> None:
         """Raise an exception if any tools contain async functions"""
@@ -3686,8 +3761,6 @@ class Agent:
 
                         # Add instructions from the toolkit
                         if tool.add_instructions and tool.instructions is not None:
-                            if self._tool_instructions is None:
-                                self._tool_instructions = []
                             self._tool_instructions.append(tool.instructions)
 
                     elif isinstance(tool, Function):
@@ -3704,8 +3777,6 @@ class Agent:
 
                         # Add instructions from the Function
                         if tool.add_instructions and tool.instructions is not None:
-                            if self._tool_instructions is None:
-                                self._tool_instructions = []
                             self._tool_instructions.append(tool.instructions)
 
                     elif callable(tool):
@@ -5682,7 +5753,9 @@ class Agent:
         self.run_response = cast(RunResponse, self.run_response)
         # Yield a reasoning started event
         if self.stream_intermediate_steps:
-            yield create_reasoning_started_event(from_run_response=self.run_response)
+            yield self._handle_event(
+                create_reasoning_started_event(from_run_response=self.run_response), self.run_response
+            )
 
         use_default_reasoning = False
 
@@ -5766,10 +5839,13 @@ class Agent:
                     reasoning_agent_messages=[reasoning_message],
                 )
                 if self.stream_intermediate_steps:
-                    yield create_reasoning_completed_event(
-                        from_run_response=self.run_response,
-                        content=ReasoningSteps(reasoning_steps=[ReasoningStep(result=reasoning_message.content)]),
-                        content_type=ReasoningSteps.__name__,
+                    yield self._handle_event(
+                        create_reasoning_completed_event(
+                            from_run_response=self.run_response,
+                            content=ReasoningSteps(reasoning_steps=[ReasoningStep(result=reasoning_message.content)]),
+                            content_type=ReasoningSteps.__name__,
+                        ),
+                        self.run_response,
                     )
             else:
                 log_warning(
@@ -5843,10 +5919,13 @@ class Agent:
                         for reasoning_step in reasoning_steps:
                             updated_reasoning_content = self._format_reasoning_step_content(reasoning_step)
 
-                            yield create_reasoning_step_event(
-                                from_run_response=self.run_response,
-                                reasoning_step=reasoning_step,
-                                reasoning_content=updated_reasoning_content,
+                            yield self._handle_event(
+                                create_reasoning_step_event(
+                                    from_run_response=self.run_response,
+                                    reasoning_step=reasoning_step,
+                                    reasoning_content=updated_reasoning_content,
+                                ),
+                                self.run_response,
                             )
 
                     # Find the index of the first assistant message
@@ -5882,17 +5961,22 @@ class Agent:
 
             # Yield the final reasoning completed event
             if self.stream_intermediate_steps:
-                yield create_reasoning_completed_event(
-                    from_run_response=self.run_response,
-                    content=ReasoningSteps(reasoning_steps=all_reasoning_steps),
-                    content_type=ReasoningSteps.__name__,
+                yield self._handle_event(
+                    create_reasoning_completed_event(
+                        from_run_response=self.run_response,
+                        content=ReasoningSteps(reasoning_steps=all_reasoning_steps),
+                        content_type=ReasoningSteps.__name__,
+                    ),
+                    self.run_response,
                 )
 
     async def areason(self, run_messages: RunMessages) -> Any:
         self.run_response = cast(RunResponse, self.run_response)
         # Yield a reasoning started event
         if self.stream_intermediate_steps:
-            yield create_reasoning_started_event(from_run_response=self.run_response)
+            yield self._handle_event(
+                create_reasoning_started_event(from_run_response=self.run_response), self.run_response
+            )
 
         use_default_reasoning = False
 
@@ -5976,10 +6060,13 @@ class Agent:
                     reasoning_agent_messages=[reasoning_message],
                 )
                 if self.stream_intermediate_steps:
-                    yield create_reasoning_completed_event(
-                        from_run_response=self.run_response,
-                        content=ReasoningSteps(reasoning_steps=[ReasoningStep(result=reasoning_message.content)]),
-                        content_type=ReasoningSteps.__name__,
+                    yield self._handle_event(
+                        create_reasoning_completed_event(
+                            from_run_response=self.run_response,
+                            content=ReasoningSteps(reasoning_steps=[ReasoningStep(result=reasoning_message.content)]),
+                            content_type=ReasoningSteps.__name__,
+                        ),
+                        self.run_response,
                     )
             else:
                 log_warning(
@@ -6053,10 +6140,13 @@ class Agent:
                             updated_reasoning_content = self._format_reasoning_step_content(reasoning_step)
 
                             # Yield the response with the updated reasoning_content
-                            yield create_reasoning_step_event(
-                                from_run_response=self.run_response,
-                                reasoning_step=reasoning_step,
-                                reasoning_content=updated_reasoning_content,
+                            yield self._handle_event(
+                                create_reasoning_step_event(
+                                    from_run_response=self.run_response,
+                                    reasoning_step=reasoning_step,
+                                    reasoning_content=updated_reasoning_content,
+                                ),
+                                self.run_response,
                             )
 
                     # Find the index of the first assistant message
@@ -6091,17 +6181,28 @@ class Agent:
 
             # Yield the final reasoning completed event
             if self.stream_intermediate_steps:
-                yield create_reasoning_completed_event(
-                    from_run_response=self.run_response,
-                    content=ReasoningSteps(reasoning_steps=all_reasoning_steps),
-                    content_type=ReasoningSteps.__name__,
+                yield self._handle_event(
+                    create_reasoning_completed_event(
+                        from_run_response=self.run_response,
+                        content=ReasoningSteps(reasoning_steps=all_reasoning_steps),
+                        content_type=ReasoningSteps.__name__,
+                    ),
+                    self.run_response,
                 )
+
+    def _handle_event(self, event: RunResponseEvent, run_response: RunResponse):
+        # We only store events that are not run_response_content events
+        if self.store_events and event.event not in (self.events_to_skip or []):
+            if run_response.events is None:
+                run_response.events = []
+            run_response.events.append(event)
+        return event
 
     ###########################################################################
     # Default Tools
     ###########################################################################
 
-    def get_update_user_memory_function(self, user_id: Optional[str] = None, async_mode: bool = False) -> Callable:
+    def get_update_user_memory_function(self, user_id: Optional[str] = None, async_mode: bool = False) -> Function:
         def update_user_memory(task: str) -> str:
             """Use this function to submit a task to modify the Agent's memory.
             Describe the task in detail and be specific.
@@ -6134,9 +6235,11 @@ class Agent:
             return response
 
         if async_mode:
-            return aupdate_user_memory
+            update_user_memory_function = aupdate_user_memory
         else:
-            return update_user_memory
+            update_user_memory_function = update_user_memory  # type: ignore
+
+        return Function.from_callable(update_user_memory_function, name="update_user_memory")
 
     def get_chat_history_function(self, session_id: str) -> Callable:
         def get_chat_history(num_chats: Optional[int] = None) -> str:
@@ -6224,7 +6327,7 @@ class Agent:
 
     def search_knowledge_base_function(
         self, knowledge_filters: Optional[Dict[str, Any]] = None, async_mode: bool = False
-    ) -> Callable:
+    ) -> Function:
         """Factory function to create a search_knowledge_base function with filters."""
 
         def search_knowledge_base(query: str) -> str:
@@ -6291,13 +6394,15 @@ class Agent:
             return self.convert_documents_to_string(docs_from_knowledge)
 
         if async_mode:
-            return asearch_knowledge_base
+            search_knowledge_base_function = asearch_knowledge_base
         else:
-            return search_knowledge_base
+            search_knowledge_base_function = search_knowledge_base  # type: ignore
+
+        return Function.from_callable(search_knowledge_base_function, name="search_knowledge_base")
 
     def search_knowledge_base_with_agentic_filters_function(
         self, knowledge_filters: Optional[Dict[str, Any]] = None, async_mode: bool = False
-    ) -> Callable:
+    ) -> Function:
         """Factory function to create a search_knowledge_base function with filters."""
 
         def search_knowledge_base(query: str, filters: Optional[Dict[str, Any]] = None) -> str:
@@ -6369,9 +6474,11 @@ class Agent:
             return self.convert_documents_to_string(docs_from_knowledge)
 
         if async_mode:
-            return asearch_knowledge_base
+            search_knowledge_base_function = asearch_knowledge_base
         else:
-            return search_knowledge_base
+            search_knowledge_base_function = search_knowledge_base  # type: ignore
+
+        return Function.from_callable(search_knowledge_base_function, name="search_knowledge_base_with_agentic_filters")
 
     def _get_agentic_or_user_search_filters(
         self, filters: Optional[Dict[str, Any]], effective_filters: Optional[Dict[str, Any]]
