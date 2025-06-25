@@ -163,7 +163,17 @@ docker run -p 6333:6333 -p 6334:6334 -v $(pwd)/qdrant_storage:/qdrant/storage:z 
 ```
 
 ```shell
-python cookbook/vector_dbs/qdrant_db.py
+python cookbook/agent_concepts/knowledge/vector_dbs/qdrant_db/qdrant_db.py
+```
+
+### RedisVL
+
+```shell
+docker run -d --name redis-stack -p 6379:6379 -p 8001:8001 redis/redis-stack:latest
+```
+
+```shell
+python cookbook/agent_concepts/knowledge/vector_dbs/redisvl_db/redisvl_db.py
 ```
 
 ### Weaviate
