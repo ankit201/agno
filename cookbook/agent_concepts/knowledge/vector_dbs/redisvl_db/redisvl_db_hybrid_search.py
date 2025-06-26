@@ -2,7 +2,10 @@ from agno.agent import Agent
 from agno.knowledge.pdf_url import PDFUrlKnowledgeBase
 from agno.vectordb.redisvl import RedisVL
 from agno.vectordb.search import SearchType
+<<<<<<< HEAD
 from agno.embedder.openai import OpenAIEmbedder
+=======
+>>>>>>> 9ad779499e224522529d206d7dcfb2b978213f53
 
 COLLECTION_NAME = "thai-recipes"
 
@@ -12,7 +15,10 @@ vector_db = RedisVL(
     host="localhost",
     port=6379,
     search_type=SearchType.hybrid,  # Enables both vector and keyword search
+<<<<<<< HEAD
     embedder=OpenAIEmbedder()  # Add embedder for vector search functionality
+=======
+>>>>>>> 9ad779499e224522529d206d7dcfb2b978213f53
 )
 
 knowledge_base = PDFUrlKnowledgeBase(
@@ -33,4 +39,8 @@ agent = Agent(
 agent.print_response("Find recipes with coconut milk and curry paste", markdown=True)
 
 # Test with another hybrid search
+<<<<<<< HEAD
 agent.print_response("Show me spicy Thai soup recipes", markdown=True)
+=======
+agent.print_response("Show me spicy Thai soup recipes", markdown=True) 
+>>>>>>> 9ad779499e224522529d206d7dcfb2b978213f53
