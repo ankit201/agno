@@ -387,7 +387,7 @@ class RedisVL(VectorDb):
         try:
             # For VectorQuery, use the raw numpy array instead of bytes
             query_vector = np.array(query_embedding, dtype=np.float32)
-            
+
             vector_query = VectorQuery(
                 vector=query_vector,
                 vector_field_name="embedding",
@@ -415,53 +415,61 @@ class RedisVL(VectorDb):
 
             # Use direct Redis FT.SEARCH command to avoid encoding issues
             raw_results = self.redis_client.execute_command(
-                "FT.SEARCH", 
-                self.collection, 
-                search_query, 
-                "RETURN", "4", "id", "name", "content", "meta_data",
-                "LIMIT", "0", str(limit)
+                "FT.SEARCH",
+                self.collection,
+                search_query,
+                "RETURN",
+                "4",
+                "id",
+                "name",
+                "content",
+                "meta_data",
+                "LIMIT",
+                "0",
+                str(limit),
             )
-            
+
             # Process raw results
             documents = []
             if len(raw_results) > 1:  # First element is count
                 # Results come in pairs: [key, [field1, value1, field2, value2, ...]]
                 for i in range(1, len(raw_results), 2):
-                    key = raw_results[i]
+                    # key = raw_results[i]  # Not used, skip assignment
                     fields = raw_results[i + 1] if i + 1 < len(raw_results) else []
-                    
+
                     # Convert fields list to dict
                     field_dict = {}
                     for j in range(0, len(fields), 2):
                         field_name = fields[j]
                         field_value = fields[j + 1] if j + 1 < len(fields) else ""
-                        
+
                         # Decode bytes to string
                         if isinstance(field_name, bytes):
-                            field_name = field_name.decode('utf-8')
+                            field_name = field_name.decode("utf-8")
                         if isinstance(field_value, bytes):
-                            field_value = field_value.decode('utf-8')
-                        
+                            field_value = field_value.decode("utf-8")
+
                         field_dict[field_name] = field_value
-                    
+
                     # Create Document
                     doc_id = field_dict.get("id", "")
                     name = field_dict.get("name", doc_id)
                     content = field_dict.get("content", "")
                     meta_data_str = field_dict.get("meta_data", "{}")
-                    
+
                     try:
                         meta_data = json.loads(meta_data_str) if meta_data_str else {}
                     except json.JSONDecodeError:
                         meta_data = {}
-                    
+
                     doc = Document(id=doc_id, name=name, content=content, meta_data=meta_data)
                     documents.append(doc)
-            
+
             return documents
         except Exception as e:
             log_debug(f"Error in keyword search: {str(e)}")
             import traceback
+
             traceback.print_exc()
             return []
 
@@ -521,19 +529,19 @@ class RedisVL(VectorDb):
                 # Extract document data - decode bytes to strings if needed
                 doc_id = result_dict.get("id", "")
                 if isinstance(doc_id, bytes):
-                    doc_id = doc_id.decode('utf-8')
-                
+                    doc_id = doc_id.decode("utf-8")
+
                 name = result_dict.get("name", doc_id)
                 if isinstance(name, bytes):
-                    name = name.decode('utf-8')
-                
+                    name = name.decode("utf-8")
+
                 content = result_dict.get("content", "")
                 if isinstance(content, bytes):
-                    content = content.decode('utf-8')
-                
+                    content = content.decode("utf-8")
+
                 meta_data_str = result_dict.get("meta_data", "{}")
                 if isinstance(meta_data_str, bytes):
-                    meta_data_str = meta_data_str.decode('utf-8')
+                    meta_data_str = meta_data_str.decode("utf-8")
 
                 # Parse metadata
                 try:
@@ -589,7 +597,7 @@ class RedisVL(VectorDb):
 
             # For VectorQuery, use the raw numpy array instead of bytes
             query_vector = np.array(query_embedding, dtype=np.float32)
-            
+
             vector_query = VectorQuery(
                 vector=query_vector,
                 vector_field_name="embedding",
@@ -666,9 +674,9 @@ class RedisVL(VectorDb):
                 info = self.redis_client.execute_command("FT.INFO", self.collection)
                 # info is a list where 'num_docs' appears before its value
                 for i, item in enumerate(info):
-                    if isinstance(item, bytes) and item.decode('utf-8') == 'num_docs':
+                    if isinstance(item, bytes) and item.decode("utf-8") == "num_docs":
                         return int(info[i + 1])
-                    elif isinstance(item, str) and item == 'num_docs':
+                    elif isinstance(item, str) and item == "num_docs":
                         return int(info[i + 1])
         except Exception as e:
             log_debug(f"Error getting document count: {str(e)}")

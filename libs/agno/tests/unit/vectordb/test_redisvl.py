@@ -1,7 +1,6 @@
-import json
 import uuid
 from typing import List
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -55,7 +54,7 @@ def sample_documents() -> List[Document]:
             name="thai_soup",
         ),
         Document(
-            id="doc_2", 
+            id="doc_2",
             content="Pad Thai is a stir-fried rice noodle dish",
             meta_data={"cuisine": "Thai", "type": "noodles"},
             name="pad_thai",
@@ -155,10 +154,10 @@ def test_get_distance_metric(redisvl_db):
     """Test distance metric conversion."""
     redisvl_db.distance = Distance.cosine
     assert redisvl_db._get_distance_metric() == "COSINE"
-    
+
     redisvl_db.distance = Distance.l2
     assert redisvl_db._get_distance_metric() == "L2"
-    
+
     redisvl_db.distance = Distance.max_inner_product
     assert redisvl_db._get_distance_metric() == "IP"
 
@@ -169,12 +168,12 @@ def test_format_embedding(redisvl_db):
     embedding_list = [0.1, 0.2, 0.3]
     result = redisvl_db._format_embedding(embedding_list)
     assert isinstance(result, bytes)
-    
+
     # Test with numpy array
     embedding_array = np.array([0.1, 0.2, 0.3], dtype=np.float32)
     result = redisvl_db._format_embedding(embedding_array)
     assert isinstance(result, bytes)
-    
+
     # Test with None
     result = redisvl_db._format_embedding(None)
     assert result is None
@@ -192,7 +191,7 @@ def test_schema_property(redisvl_db):
     with patch("agno.vectordb.redisvl.redisvl.IndexSchema") as mock_schema_class:
         mock_schema_instance = MagicMock()
         mock_schema_class.from_dict.return_value = mock_schema_instance
-        
+
         # Reset the schema to trigger creation
         redisvl_db._schema = None
         schema = redisvl_db.schema
@@ -224,7 +223,7 @@ def test_exists(redisvl_db):
     """Test exists method."""
     redisvl_db._index.exists.return_value = True
     assert redisvl_db.exists() is True
-    
+
     redisvl_db._index.exists.return_value = False
     assert redisvl_db.exists() is False
 
@@ -238,11 +237,11 @@ def test_exists_with_exception(redisvl_db):
 def test_doc_exists(redisvl_db, sample_documents):
     """Test doc_exists method."""
     doc = sample_documents[0]
-    
+
     # Test when document exists
     redisvl_db._index.get.return_value = {"id": doc.id}
     assert redisvl_db.doc_exists(doc) is True
-    
+
     # Test when document doesn't exist
     redisvl_db._index.get.return_value = None
     assert redisvl_db.doc_exists(doc) is False
@@ -260,7 +259,7 @@ def test_name_exists(redisvl_db):
     # Test when name exists
     redisvl_db._index.search.return_value = [{"name": "test_name"}]
     assert redisvl_db.name_exists("test_name") is True
-    
+
     # Test when name doesn't exist
     redisvl_db._index.search.return_value = []
     assert redisvl_db.name_exists("test_name") is False
@@ -276,9 +275,9 @@ def test_insert(redisvl_db, sample_documents, mock_embedder):
     """Test insert method."""
     # Mock embedder to return embeddings
     mock_embedder.get_embedding.return_value = [0.1] * 1024
-    
+
     # Mock create to avoid index creation
-    with patch.object(redisvl_db, 'create'):
+    with patch.object(redisvl_db, "create"):
         redisvl_db.insert(sample_documents)
         redisvl_db._index.load.assert_called()
 
@@ -294,8 +293,8 @@ def test_insert_with_embeddings(redisvl_db, sample_documents):
     # Add embeddings to documents
     for doc in sample_documents:
         doc.embedding = [0.1] * 1024
-    
-    with patch.object(redisvl_db, 'create'):
+
+    with patch.object(redisvl_db, "create"):
         redisvl_db.insert(sample_documents)
         redisvl_db._index.load.assert_called()
 
@@ -303,9 +302,9 @@ def test_insert_with_embeddings(redisvl_db, sample_documents):
 def test_insert_without_embedder(redisvl_db, sample_documents):
     """Test insert method without embedder or embeddings."""
     redisvl_db.embedder = None
-    
+
     # Documents without embeddings should be skipped
-    with patch.object(redisvl_db, 'create'):
+    with patch.object(redisvl_db, "create"):
         redisvl_db.insert(sample_documents)
         # Should not load anything since no embeddings available
         redisvl_db._index.load.assert_not_called()
@@ -318,7 +317,7 @@ def test_upsert_available(redisvl_db):
 
 def test_upsert(redisvl_db, sample_documents):
     """Test upsert method."""
-    with patch.object(redisvl_db, 'insert') as mock_insert:
+    with patch.object(redisvl_db, "insert") as mock_insert:
         redisvl_db.upsert(sample_documents)
         mock_insert.assert_called_once_with(sample_documents, None)
 
@@ -326,14 +325,12 @@ def test_upsert(redisvl_db, sample_documents):
 def test_search_vector(redisvl_db, mock_embedder):
     """Test vector search."""
     mock_embedder.get_embedding.return_value = [0.1] * 1024
-    
+
     # Mock search results
     mock_results = MagicMock()
-    mock_results.docs = [
-        MagicMock(id="doc_1", name="test_doc", content="test_content", meta_data='{"type": "test"}')
-    ]
+    mock_results.docs = [MagicMock(id="doc_1", name="test_doc", content="test_content", meta_data='{"type": "test"}')]
     redisvl_db._index.query.return_value = mock_results
-    
+
     results = redisvl_db.search("test query", limit=5, search_type=SearchType.vector)
     assert isinstance(results, list)
 
@@ -351,9 +348,9 @@ def test_search_keyword(redisvl_db):
     redisvl_db._redis_client.execute_command.return_value = [
         1,  # count
         "doc:1",  # key
-        ["id", "doc_1", "name", "test_doc", "content", "test content", "meta_data", '{"type": "test"}']
+        ["id", "doc_1", "name", "test_doc", "content", "test content", "meta_data", '{"type": "test"}'],
     ]
-    
+
     results = redisvl_db.search("test query", search_type=SearchType.keyword)
     assert isinstance(results, list)
 
@@ -361,7 +358,7 @@ def test_search_keyword(redisvl_db):
 def test_search_keyword_empty_results(redisvl_db):
     """Test keyword search with empty results."""
     redisvl_db._redis_client.execute_command.return_value = [0]
-    
+
     results = redisvl_db.search("test query", search_type=SearchType.keyword)
     assert results == []
 
@@ -369,10 +366,10 @@ def test_search_keyword_empty_results(redisvl_db):
 def test_search_hybrid(redisvl_db, mock_embedder):
     """Test hybrid search."""
     mock_embedder.get_embedding.return_value = [0.1] * 1024
-    
+
     with (
-        patch.object(redisvl_db, '_vector_search', return_value=[]) as mock_vector,
-        patch.object(redisvl_db, '_keyword_search', return_value=[]) as mock_keyword,
+        patch.object(redisvl_db, "_vector_search", return_value=[]) as mock_vector,
+        patch.object(redisvl_db, "_keyword_search", return_value=[]) as mock_keyword,
     ):
         results = redisvl_db.search("test query", search_type=SearchType.hybrid)
         mock_vector.assert_called_once()
@@ -399,17 +396,17 @@ def test_process_search_results(redisvl_db):
     # Mock search results with different formats
     mock_results = [
         {"id": "doc_1", "name": "test_doc", "content": "test content", "meta_data": '{"type": "test"}'},
-        MagicMock(id="doc_2", name="test_doc2", content="test content 2", meta_data='{"type": "test2"}')
+        MagicMock(id="doc_2", name="test_doc2", content="test content 2", meta_data='{"type": "test2"}'),
     ]
-    
+
     # Add __dict__ to the MagicMock
     mock_results[1].__dict__ = {
         "id": "doc_2",
-        "name": "test_doc2", 
+        "name": "test_doc2",
         "content": "test content 2",
-        "meta_data": '{"type": "test2"}'
+        "meta_data": '{"type": "test2"}',
     }
-    
+
     documents = redisvl_db._process_search_results(mock_results, "test query")
     assert len(documents) == 2
     assert all(isinstance(doc, Document) for doc in documents)
@@ -417,15 +414,8 @@ def test_process_search_results(redisvl_db):
 
 def test_process_search_results_with_bytes(redisvl_db):
     """Test search result processing with byte strings."""
-    mock_results = [
-        {
-            "id": b"doc_1",
-            "name": b"test_doc",
-            "content": b"test content",
-            "meta_data": b'{"type": "test"}'
-        }
-    ]
-    
+    mock_results = [{"id": b"doc_1", "name": b"test_doc", "content": b"test content", "meta_data": b'{"type": "test"}'}]
+
     documents = redisvl_db._process_search_results(mock_results, "test query")
     assert len(documents) == 1
     assert documents[0].id == "doc_1"
@@ -463,9 +453,9 @@ def test_optimize_nonexistent(redisvl_db):
 def test_delete(redisvl_db):
     """Test delete method."""
     with (
-        patch.object(redisvl_db, 'exists', return_value=True),
-        patch.object(redisvl_db, 'drop') as mock_drop,
-        patch.object(redisvl_db, 'create') as mock_create,
+        patch.object(redisvl_db, "exists", return_value=True),
+        patch.object(redisvl_db, "drop") as mock_drop,
+        patch.object(redisvl_db, "create") as mock_create,
     ):
         result = redisvl_db.delete()
         assert result is True
@@ -475,7 +465,7 @@ def test_delete(redisvl_db):
 
 def test_delete_nonexistent(redisvl_db):
     """Test delete method when index doesn't exist."""
-    with patch.object(redisvl_db, 'exists', return_value=False):
+    with patch.object(redisvl_db, "exists", return_value=False):
         result = redisvl_db.delete()
         assert result is False
 
@@ -484,19 +474,22 @@ def test_get_count(redisvl_db):
     """Test get_count method."""
     # Mock FT.INFO response
     redisvl_db._redis_client.execute_command.return_value = [
-        "index_name", TEST_COLLECTION,
-        "num_docs", "5",
-        "max_doc_id", "5"
+        "index_name",
+        TEST_COLLECTION,
+        "num_docs",
+        "5",
+        "max_doc_id",
+        "5",
     ]
-    
-    with patch.object(redisvl_db, 'exists', return_value=True):
+
+    with patch.object(redisvl_db, "exists", return_value=True):
         count = redisvl_db.get_count()
         assert count == 5
 
 
 def test_get_count_nonexistent(redisvl_db):
     """Test get_count method when index doesn't exist."""
-    with patch.object(redisvl_db, 'exists', return_value=False):
+    with patch.object(redisvl_db, "exists", return_value=False):
         count = redisvl_db.get_count()
         assert count == 0
 
@@ -505,12 +498,15 @@ def test_get_count_with_bytes(redisvl_db):
     """Test get_count method with bytes in response."""
     # Mock FT.INFO response with bytes
     redisvl_db._redis_client.execute_command.return_value = [
-        b"index_name", TEST_COLLECTION.encode(),
-        b"num_docs", b"3",
-        b"max_doc_id", b"3"
+        b"index_name",
+        TEST_COLLECTION.encode(),
+        b"num_docs",
+        b"3",
+        b"max_doc_id",
+        b"3",
     ]
-    
-    with patch.object(redisvl_db, 'exists', return_value=True):
+
+    with patch.object(redisvl_db, "exists", return_value=True):
         count = redisvl_db.get_count()
         assert count == 3
 
@@ -519,11 +515,11 @@ def test_validate_document(redisvl_db):
     """Test document validation."""
     valid_doc = Document(id="test_id", content="test content")
     assert redisvl_db._validate_document(valid_doc) is True
-    
+
     # Test document without content
     invalid_doc1 = Document(id="test_id", content="")
     assert redisvl_db._validate_document(invalid_doc1) is False
-    
+
     # Test document without ID
     invalid_doc2 = Document(id="", content="test content")
     assert redisvl_db._validate_document(invalid_doc2) is False
@@ -536,7 +532,7 @@ def test_clean_document_content(redisvl_db):
     cleaned = redisvl_db._clean_document_content(content_with_null)
     assert "\x00" not in cleaned
     assert "\ufffd" in cleaned
-    
+
     # Test whitespace normalization
     content_with_spaces = "test    content   with   spaces"
     cleaned = redisvl_db._clean_document_content(content_with_spaces)
@@ -555,7 +551,7 @@ def test_close(redisvl_db):
 @pytest.mark.asyncio
 async def test_async_create(redisvl_db):
     """Test async create method."""
-    with patch.object(redisvl_db, 'async_exists', return_value=False):
+    with patch.object(redisvl_db, "async_exists", return_value=False):
         await redisvl_db.async_create()
         redisvl_db._index.create.assert_called_once()
 
@@ -563,7 +559,7 @@ async def test_async_create(redisvl_db):
 @pytest.mark.asyncio
 async def test_async_create_existing(redisvl_db):
     """Test async create method when index already exists."""
-    with patch.object(redisvl_db, 'async_exists', return_value=True):
+    with patch.object(redisvl_db, "async_exists", return_value=True):
         await redisvl_db.async_create()
         redisvl_db._index.create.assert_not_called()
 
@@ -590,7 +586,7 @@ async def test_async_exists_with_exception(redisvl_db):
 async def test_async_doc_exists(redisvl_db, sample_documents):
     """Test async doc_exists method."""
     doc = sample_documents[0]
-    
+
     # Since RedisVL get() is not actually async, the async_doc_exists will catch exceptions
     result = await redisvl_db.async_doc_exists(doc)
     # The actual implementation will return False because the mock will raise an exception when awaited
@@ -613,34 +609,36 @@ async def test_async_insert(redisvl_db, sample_documents, mock_embedder):
     embedding_value = [0.1] * 1024
     mock_embedder.get_embedding.return_value = embedding_value
     redisvl_db.embedder = mock_embedder
-    
+
     # Pre-assign embeddings to documents to ensure they don't get skipped
     for doc in sample_documents:
         doc.embedding = embedding_value
-    
+
     # Reset the load mock to track calls
     redisvl_db._index.load.reset_mock()
-    
+
     # Ensure the index doesn't have aload method so it uses load
-    if hasattr(redisvl_db._index, 'aload'):
-        delattr(redisvl_db._index, 'aload')
-    
-    with patch.object(redisvl_db, 'async_create'):
+    if hasattr(redisvl_db._index, "aload"):
+        delattr(redisvl_db._index, "aload")
+
+    with patch.object(redisvl_db, "async_create"):
         await redisvl_db.async_insert(sample_documents)
         # Since documents have embeddings and _format_embedding will format them,
         # load should be called with the batch data
-        assert redisvl_db._index.load.call_count >= 1, f"Expected load to be called at least once, but was called {redisvl_db._index.load.call_count} times"
+        assert redisvl_db._index.load.call_count >= 1, (
+            f"Expected load to be called at least once, but was called {redisvl_db._index.load.call_count} times"
+        )
 
 
 @pytest.mark.asyncio
 async def test_async_insert_with_aload(redisvl_db, sample_documents, mock_embedder):
     """Test async insert method with aload method available."""
     mock_embedder.get_embedding.return_value = [0.1] * 1024
-    
+
     # Add aload method to mock index
     redisvl_db._index.aload = MagicMock()
-    
-    with patch.object(redisvl_db, 'async_create'):
+
+    with patch.object(redisvl_db, "async_create"):
         await redisvl_db.async_insert(sample_documents)
         redisvl_db._index.aload.assert_called()
 
@@ -648,7 +646,7 @@ async def test_async_insert_with_aload(redisvl_db, sample_documents, mock_embedd
 @pytest.mark.asyncio
 async def test_async_upsert(redisvl_db, sample_documents):
     """Test async upsert method."""
-    with patch.object(redisvl_db, 'async_insert') as mock_async_insert:
+    with patch.object(redisvl_db, "async_insert") as mock_async_insert:
         await redisvl_db.async_upsert(sample_documents)
         mock_async_insert.assert_called_once_with(sample_documents, None)
 
@@ -657,10 +655,10 @@ async def test_async_upsert(redisvl_db, sample_documents):
 async def test_async_search_vector(redisvl_db, mock_embedder):
     """Test async vector search."""
     mock_embedder.get_embedding.return_value = [0.1] * 1024
-    
+
     # Mock search results
     redisvl_db._index.query.return_value = []
-    
+
     results = await redisvl_db.async_search("test query", search_type=SearchType.vector)
     assert isinstance(results, list)
 
@@ -668,7 +666,7 @@ async def test_async_search_vector(redisvl_db, mock_embedder):
 @pytest.mark.asyncio
 async def test_async_search_non_vector(redisvl_db):
     """Test async search for non-vector search types."""
-    with patch.object(redisvl_db, 'search', return_value=[]) as mock_search:
+    with patch.object(redisvl_db, "search", return_value=[]) as mock_search:
         results = await redisvl_db.async_search("test query", search_type=SearchType.keyword)
         mock_search.assert_called_once_with("test query", 5, SearchType.keyword, None)
         assert isinstance(results, list)
@@ -677,7 +675,7 @@ async def test_async_search_non_vector(redisvl_db):
 @pytest.mark.asyncio
 async def test_async_drop(redisvl_db):
     """Test async drop method."""
-    with patch.object(redisvl_db, 'async_exists', return_value=True):
+    with patch.object(redisvl_db, "async_exists", return_value=True):
         await redisvl_db.async_drop()
         redisvl_db._index.drop.assert_called_once()
 
@@ -685,7 +683,7 @@ async def test_async_drop(redisvl_db):
 @pytest.mark.asyncio
 async def test_async_drop_with_exception(redisvl_db):
     """Test async drop method with exception."""
-    with patch.object(redisvl_db, 'async_exists', return_value=True):
+    with patch.object(redisvl_db, "async_exists", return_value=True):
         redisvl_db._index.drop.side_effect = Exception("Connection error")
         await redisvl_db.async_drop()  # Should not raise exception
 
@@ -695,7 +693,7 @@ def test_integration_with_reranker(mock_embedder):
     with patch("agno.vectordb.redisvl.redisvl.redis.Redis"):
         mock_reranker = MagicMock()
         mock_reranker.rerank.return_value = []
-        
+
         db = RedisVL(
             collection=TEST_COLLECTION,
             embedder=mock_embedder,
@@ -707,13 +705,13 @@ def test_integration_with_reranker(mock_embedder):
 def test_error_handling_in_search(redisvl_db, mock_embedder):
     """Test error handling in search methods."""
     mock_embedder.get_embedding.return_value = [0.1] * 1024
-    
+
     # Test vector search with query exception
     redisvl_db._index.query.side_effect = Exception("Query error")
     results = redisvl_db._vector_search("test query", 5)
     assert results == []
-    
+
     # Test keyword search with execute_command exception
     redisvl_db._redis_client.execute_command.side_effect = Exception("Command error")
     results = redisvl_db._keyword_search("test query", 5)
-    assert results == [] 
+    assert results == []
