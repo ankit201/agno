@@ -5,7 +5,7 @@ try:
     import numpy as np
     import redis
     from redisvl.index import SearchIndex
-    from redisvl.query import VectorQuery
+    from redisvl.query import VectorQuery, HybridQuery
     from redisvl.schema import IndexSchema
 except ImportError:
     raise ImportError("Please install redisvl: pip install redisvl")
@@ -35,6 +35,7 @@ class RedisVL(VectorDb):
         reranker: Optional[Reranker] = None,
         search_type: SearchType = SearchType.vector,
         vector_index: str = "hnsw",  # 'hnsw' or 'flat'
+        hybrid_alpha: float = 0.6,  # Balance for hybrid search (0.0=text only, 1.0=vector only)
         **kwargs,
     ):
         """Initialize RedisVL vector database.
@@ -65,6 +66,7 @@ class RedisVL(VectorDb):
         self.reranker = reranker
         self.search_type = search_type
         self.vector_index = vector_index
+        self.hybrid_alpha = hybrid_alpha
 
         # Initialize schema and index as None - they'll be created lazily
         self._schema: Optional[IndexSchema] = None
@@ -474,7 +476,44 @@ class RedisVL(VectorDb):
             return []
 
     def _hybrid_search(self, query: str, limit: int, filters: Optional[Dict[str, Any]] = None) -> List[Document]:
-        """Perform hybrid search (combination of vector and keyword search)."""
+        """Perform hybrid search using RedisVL's native HybridQuery."""
+        try:
+            if not self.embedder:
+                log_debug("No embedder configured for hybrid search")
+                return self._keyword_search(query, limit, filters)
+
+            # Get embedding for the query
+            query_embedding = self.embedder.get_embedding(query)
+            if query_embedding is None:
+                log_debug(f"Error getting embedding for query: {query}")
+                return self._keyword_search(query, limit, filters)
+
+            # Convert to numpy array
+            query_vector = np.array(query_embedding, dtype=np.float32)
+
+            # Create HybridQuery with both vector and text components
+            hybrid_query = HybridQuery(
+                vector=query_vector,
+                vector_field_name="embedding",
+                text=query,
+                text_fields=["content", "name"],  # Fields to search in
+                return_fields=["id", "name", "content", "meta_data", "vector_distance"],
+                num_results=limit,
+                filter_expression=self._build_filter_expression(filters) if filters else None,
+                alpha=self.hybrid_alpha,  # Use configured balance between vector and text search
+            )
+
+            # Execute the hybrid query
+            results = self.index.query(hybrid_query)
+            return self._process_search_results(results, query)
+
+        except Exception as e:
+            log_debug(f"Error in hybrid search: {e}")
+            # Fallback to the original implementation if HybridQuery fails
+            return self._fallback_hybrid_search(query, limit, filters)
+
+    def _fallback_hybrid_search(self, query: str, limit: int, filters: Optional[Dict[str, Any]] = None) -> List[Document]:
+        """Fallback hybrid search implementation."""
         # Get vector search results
         vector_results = self._vector_search(query, limit, filters)
 
