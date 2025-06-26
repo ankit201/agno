@@ -3,12 +3,18 @@ import asyncio
 from agno.agent import Agent
 from agno.knowledge.pdf_url import PDFUrlKnowledgeBase
 from agno.vectordb.redisvl import RedisVL
+from agno.embedder.openai import OpenAIEmbedder
 
 COLLECTION_NAME = "thai-recipes"
 
 
 async def main():
-    vector_db = RedisVL(collection=COLLECTION_NAME, host="localhost", port=6379)
+    vector_db = RedisVL(
+        collection=COLLECTION_NAME, 
+        host="localhost", 
+        port=6379,
+        embedder=OpenAIEmbedder()  # Add embedder for vector search functionality
+    )
 
     knowledge_base = PDFUrlKnowledgeBase(
         urls=["https://agno-public.s3.amazonaws.com/recipes/ThaiRecipes.pdf"],
@@ -19,8 +25,10 @@ async def main():
 
     # Create and use the agent
     agent = Agent(knowledge=knowledge_base, show_tool_calls=True)
-    await agent.aprint_response("What are the ingredients for Tom Kha Gai?", markdown=True)
+    await agent.aprint_response(
+        "What are the ingredients for Tom Kha Gai?", markdown=True
+    )
 
 
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    asyncio.run(main())

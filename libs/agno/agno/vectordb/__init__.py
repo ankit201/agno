@@ -6,6 +6,7 @@ __all__ = ["VectorDb", "Distance", "SearchType"]
 
 try:
     from agno.vectordb.redisvl import RedisVL
+
     __all__.extend(["RedisVL"])
 except ImportError:
     pass  # redisvl dependencies not installed

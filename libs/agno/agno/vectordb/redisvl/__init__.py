@@ -4,6 +4,6 @@ from agno.vectordb.search import SearchType
 
 __all__ = [
     "Distance",
-    "RedisVL", 
+    "RedisVL",
     "SearchType",
-] 
+]
