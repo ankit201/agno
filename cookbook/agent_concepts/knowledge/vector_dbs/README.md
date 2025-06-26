@@ -168,11 +168,21 @@ python cookbook/agent_concepts/knowledge/vector_dbs/qdrant_db/qdrant_db.py
 
 ### RedisVL
 
+#### Setup Redis Server
+
 ```shell
 docker run -d --name redis-stack -p 6379:6379 -p 8001:8001 redis/redis-stack:latest
 ```
+
+#### Install Dependencies
+
 ```shell
 pip install agno[redisvl]  # This installs redisvl>=0.3.0 automatically
+```
+
+#### Run the Agent
+
+```shell
 python cookbook/agent_concepts/knowledge/vector_dbs/redisvl_db/redisvl_db.py
 ```
 
