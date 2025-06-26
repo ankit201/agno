@@ -33,8 +33,4 @@ agent = Agent(
 agent.print_response("Find recipes with coconut milk and curry paste", markdown=True)
 
 # Test with another hybrid search
-<<<<<<< HEAD
 agent.print_response("Show me spicy Thai soup recipes", markdown=True)
-=======
-agent.print_response("Show me spicy Thai soup recipes", markdown=True) 
->>>>>>> 9ad779499e224522529d206d7dcfb2b978213f53

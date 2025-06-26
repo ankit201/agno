@@ -25,7 +25,6 @@ async def main():
 
     # Create and use the agent
     agent = Agent(knowledge=knowledge_base, show_tool_calls=True)
-<<<<<<< HEAD
     await agent.aprint_response(
         "What are the ingredients for Tom Kha Gai?", markdown=True
     )
@@ -33,10 +32,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-=======
-    await agent.aprint_response("What are the ingredients for Tom Kha Gai?", markdown=True)
-
-
-if __name__ == "__main__":
-    asyncio.run(main()) 
->>>>>>> 9ad779499e224522529d206d7dcfb2b978213f53
