@@ -13,14 +13,14 @@ from agno.vectordb.search import SearchType
 
 COLLECTION_NAME = "thai-recipes-hybrid"
 
-# Configure RedisVL with improved native hybrid search
+# Redis VL with hybrid search configuration
 vector_db = RedisVL(
     collection=COLLECTION_NAME,
     host="localhost",
     port=6379,
-    search_type=SearchType.hybrid,  # Uses native HybridQuery for optimized search
-    embedder=OpenAIEmbedder(id="text-embedding-3-small"),
-    hybrid_alpha=0.7,  # 70% vector, 30% text - configurable balance (0.0=text only, 1.0=vector only)
+    embedder=OpenAIEmbedder(),
+    search_type=SearchType.hybrid,  # Enable hybrid search
+    hybrid_alpha=0.7,  # Balance between vector (0.7) and text (0.3) search
 )
 
 knowledge_base = PDFUrlKnowledgeBase(
@@ -30,20 +30,22 @@ knowledge_base = PDFUrlKnowledgeBase(
 
 knowledge_base.load(recreate=False)  # Comment out after first run
 
-# Create and use the agent with improved hybrid search
-agent = Agent(
-    knowledge=knowledge_base,
-    show_tool_calls=True,
-    search_knowledge=True,
-)
+# Create and use the agent with hybrid search
+agent = Agent(knowledge=knowledge_base, show_tool_calls=True)
 
-print("🔍 Testing RedisVL Native Hybrid Search (70% vector, 30% text)")
+print("🔍 Using Hybrid Search (combines vector similarity + text matching)")
 print("=" * 60)
 
-# This will use RedisVL's native HybridQuery for optimized hybrid search
-agent.print_response("Find recipes with coconut milk and curry paste", markdown=True)
+# Test hybrid search queries
+queries = [
+    "How to make Thai curry?",
+    "coconut soup recipe",
+    "spicy pad thai ingredients",
+    "traditional Thai desserts"
+]
 
-print("\n" + "=" * 60)
-
-# Test with another hybrid search query
-agent.print_response("Show me spicy Thai soup recipes", markdown=True)
+for query in queries:
+    print(f"\n📝 Query: {query}")
+    print("-" * 40)
+    agent.print_response(query, markdown=True)
+    print("\n")

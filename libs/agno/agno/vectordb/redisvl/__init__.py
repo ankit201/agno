@@ -1,6 +1,6 @@
 from agno.vectordb.distance import Distance
-from agno.vectordb.redisvl.redisvl import RedisVL
 from agno.vectordb.search import SearchType
+from .redisvl import RedisVL
 
 __all__ = [
     "Distance",
